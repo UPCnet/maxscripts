@@ -39,5 +39,6 @@ setup(name='maxscripts',
       max.devel = maxscripts.devel:main
       maxui.setup = maxscripts.maxui:main
       max.report = maxscripts.report:main
+      max.cloudapis = maxscripts.cloudapis:main
       """,
       )
