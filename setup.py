@@ -3,8 +3,8 @@ import os
 from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
-README = open(os.path.join(here, 'README.txt')).read()
-CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
+README = open(os.path.join(here, 'README.rst')).read()
+CHANGES = open(os.path.join(here, 'CHANGES.rst')).read()
 
 requires = [
     'setuptools',
@@ -22,9 +22,9 @@ setup(name='maxscripts',
           "Topic :: Internet :: WWW/HTTP",
           "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
       ],
-      author='',
-      author_email='',
-      url='',
+      author='UPCnet Plone Team',
+      author_email='plone.team@upcnet.es',
+      url='https://github.com/upcnet/maxscripts',
       keywords='web pyramid pylons',
       packages=find_packages(),
       include_package_data=True,
