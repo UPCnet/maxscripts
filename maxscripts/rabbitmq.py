@@ -79,7 +79,10 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
                                      type='topic')
             print("Added 'new' exchange.")
 
-        print("Purged RabbitMQ server.")
+        # Create the default push queue
+        channel.queue_declare("push")
+
+        print("Initialized and purged RabbitMQ server.")
 
 
 def main(argv=sys.argv, quiet=False):  # pragma: no cover
