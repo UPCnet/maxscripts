@@ -1,8 +1,12 @@
+from maxclient import MaxClient
+
 import argparse
 import ConfigParser
+import json
 import pika
 import pymongo
 import requests
+import os
 import sys
 
 
@@ -16,13 +20,13 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
         self.config.read(self.options.configfile)
 
         try:
-            self.cluster = self.config.get('app:main', 'mongodb.cluster')
-            self.standaloneserver = self.config.get('app:main', 'mongodb.url')
-            self.clustermembers = self.config.get('app:main', 'mongodb.hosts')
-            self.dbname = self.config.get('app:main', 'mongodb.db_name')
-            self.replicaset = self.config.get('app:main', 'mongodb.replica_set')
+            self.cluster = self.config.get('mongodb', 'mongodb.cluster')
+            self.standaloneserver = self.config.get('mongodb', 'mongodb.url')
+            self.clustermembers = self.config.get('mongodb', 'mongodb.hosts')
+            self.dbname = self.config.get('mongodb', 'mongodb.db_name')
+            self.replicaset = self.config.get('mongodb', 'mongodb.replica_set')
 
-            self.talk_server = self.config.get('app:main', 'max.talk_server')
+            self.talk_server = self.config.get('max', 'max.talk_server')
 
         except:
             print('You must provide a valid configuration .ini file.')
@@ -46,7 +50,8 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
             )
         )
         channel = rabbit_con.channel()
-        current_conversations = set(db.conversations.find({}))
+
+        current_conversations = set([unicode(conv['_id']) for conv in db.conversations.find({}, {'_id': 1})])
         req = requests.get('http://{}:15672/api/exchanges'.format(self.talk_server), auth=('victor.fernandez', ''))
         if req.status_code != 200:
             print('Error getting current exchanges from RabbitMQ server.')
@@ -73,14 +78,27 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
             print("Added exchange {}".format(exadd))
 
         # Create default exchange if not created yet
-        if not u'new' in current_exchanges:
-            channel.exchange_declare(exchange='new',
-                                     durable=True,
-                                     type='topic')
-            print("Added 'new' exchange.")
+        channel.exchange_declare(exchange='new',
+                                 durable=True,
+                                 type='topic')
+        print("Added 'new' exchange.")
 
         # Create the default push queue
         channel.queue_declare("push")
+
+        # Check if the restricted user and token is set
+        settings_file = '{}/.max_restricted'.format(self.config.get('max', 'config_directory'))
+        if os.path.exists(settings_file):
+            settings = json.loads(open(settings_file).read())
+        else:
+            settings = {}
+
+        if 'token' not in settings or 'username' not in settings:
+            maxclient = MaxClient(url=self.config.get('max', 'server'), oauth_server=self.config.get('max', 'oauth_server'))
+            settings['token'] = maxclient.login()
+            settings['username'] = maxclient.getActor()
+
+            open(settings_file, 'w').write(json.dumps(settings, indent=4, sort_keys=True))
 
         print("Initialized and purged RabbitMQ server.")
 
