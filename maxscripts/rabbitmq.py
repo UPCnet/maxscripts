@@ -80,11 +80,19 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
         # Create default exchange if not created yet
         channel.exchange_declare(exchange='new',
                                  durable=True,
-                                 type='topic')
+                                 type='direct')
         print("Added 'new' exchange.")
 
         # Create the default push queue
         channel.queue_declare("push")
+
+        # Create twitter exchange if not created yet
+        channel.exchange_declare(exchange='twitter',
+                                 durable=True,
+                                 type='fanout')
+        # Create the default twitter queue
+        channel.queue_declare("twitter")
+        channel.queue_bind(exchange="twitter", queue="twitter")
 
         # Check if the restricted user and token is set
         settings_file = '{}/.max_restricted'.format(self.config.get('max', 'config_directory'))
