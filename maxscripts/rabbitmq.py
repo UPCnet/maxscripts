@@ -92,6 +92,7 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
                                  type='fanout')
         # Create the default twitter queue
         channel.queue_declare("twitter")
+        channel.queue_declare("tweety_restart")
         channel.queue_bind(exchange="twitter", queue="twitter")
 
         # Check if the restricted user and token is set
