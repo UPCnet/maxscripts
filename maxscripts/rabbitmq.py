@@ -84,15 +84,15 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
         print("Added 'new' exchange.")
 
         # Create the default push queue
-        channel.queue_declare("push")
+        channel.queue_declare("push", durable=True)
 
         # Create twitter exchange if not created yet
         channel.exchange_declare(exchange='twitter',
                                  durable=True,
                                  type='fanout')
         # Create the default twitter queue
-        channel.queue_declare("twitter")
-        channel.queue_declare("tweety_restart")
+        channel.queue_declare("twitter", durable=True)
+        channel.queue_declare("tweety_restart", durable=True)
         channel.queue_bind(exchange="twitter", queue="twitter")
 
         # Check if the restricted user and token is set
