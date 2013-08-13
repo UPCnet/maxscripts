@@ -20,13 +20,13 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
         self.config.read(self.options.configfile)
 
         try:
-            self.cluster = self.config.get('mongodb', 'mongodb.cluster')
-            self.standaloneserver = self.config.get('mongodb', 'mongodb.url')
-            self.clustermembers = self.config.get('mongodb', 'mongodb.hosts')
-            self.dbname = self.config.get('mongodb', 'mongodb.db_name')
-            self.replicaset = self.config.get('mongodb', 'mongodb.replica_set')
+            self.cluster = self.config.get('app:main', 'mongodb.cluster')
+            self.standaloneserver = self.config.get('app:main', 'mongodb.url')
+            self.clustermembers = self.config.get('app:main', 'mongodb.hosts')
+            self.dbname = self.config.get('app:main', 'mongodb.db_name')
+            self.replicaset = self.config.get('app:main', 'mongodb.replica_set')
 
-            self.talk_server = self.config.get('max', 'max.talk_server')
+            self.talk_server = self.config.get('app:main', 'max.talk_server')
 
         except:
             print('You must provide a valid configuration .ini file.')
@@ -81,29 +81,34 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
         channel.exchange_declare(exchange='new',
                                  durable=True,
                                  type='direct')
-        print("Added 'new' exchange.")
+        print("Declared 'new' exchange.")
 
         # Create the default push queue
         channel.queue_declare("push", durable=True)
+        print("Declared 'push' queue.")
 
         # Create twitter exchange if not created yet
         channel.exchange_declare(exchange='twitter',
                                  durable=True,
                                  type='fanout')
+        print("Declared 'twitter' exchange.")
         # Create the default twitter queue
         channel.queue_declare("twitter", durable=True)
+        print("Declared 'twitter' queue.")
         channel.queue_declare("tweety_restart", durable=True)
+        print("Declared 'tweety_restart' queue.")
         channel.queue_bind(exchange="twitter", queue="twitter")
+        print("Binded 'twitter' queue to 'twitter' exchange.")
 
         # Check if the restricted user and token is set
-        settings_file = '{}/.max_restricted'.format(self.config.get('max', 'config_directory'))
+        settings_file = '{}/.max_restricted'.format(self.config.get('app:main', 'config_directory'))
         if os.path.exists(settings_file):
             settings = json.loads(open(settings_file).read())
         else:
             settings = {}
 
         if 'token' not in settings or 'username' not in settings:
-            maxclient = MaxClient(url=self.config.get('max', 'server'), oauth_server=self.config.get('max', 'oauth_server'))
+            maxclient = MaxClient(url=self.config.get('app:main', 'max.server'), oauth_server=self.config.get('app:main', 'max.oauth_server'))
             settings['token'] = maxclient.login()
             settings['username'] = maxclient.getActor()
 
@@ -113,14 +118,14 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
 
 
 def main(argv=sys.argv, quiet=False):  # pragma: no cover
-    description = "Initialize and purge if needed RabbitMQ server."
+    description = "Initialize and purge if needed RabbitMQ development server."
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument('-c', '--config',
                       dest='configfile',
                       type=str,
                       required=True,
-                      help=("Configuration file"))
+                      help=("Configuration file (e.g max.ini)"))
     options = parser.parse_args()
 
     command = InitAndPurgeRabbitServer(options, quiet)
