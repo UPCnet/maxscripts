@@ -19,11 +19,11 @@ class UpdateCloudAPISettings(object):  # pragma: no cover
             self.access_token = self.config.get('twitter', 'access_token')
             self.access_token_secret = self.config.get('twitter', 'access_token_secret')
 
-            self.cluster = self.config.get('mongodb', 'cluster')
-            self.standaloneserver = self.config.get('mongodb', 'standaloneserver')
-            self.clustermembers = self.config.get('mongodb', 'clustermembers')
-            self.dbname = self.config.get('mongodb', 'dbname')
-            self.replicaset = self.config.get('mongodb', 'replicaset')
+            self.cluster = self.config.get('mongodb', 'mongodb.cluster')
+            self.standaloneserver = self.config.get('mongodb', 'mongodb.url')
+            self.clustermembers = self.config.get('mongodb', 'mongodb.hosts')
+            self.dbname = self.config.get('mongodb', 'mongodb.db_name')
+            self.replicaset = self.config.get('mongodb', 'mongodb.replica_set')
 
         except:
             print('You must provide a valid configuration .ini file.')
