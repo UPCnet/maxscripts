@@ -13,6 +13,6 @@ def main(argv=sys.argv):
     base['oAuthToken'] = settings['token']
     base['maxServerURL'] = settings['maxserver']
     base['maxServerURLAlias'] = settings['maxserver']
-    base['maxTalkURL'] = settings['maxserver'] + '/max'
+    base['maxTalkURL'] = settings['maxserver'] + '/stomp'
     base['avatarURLpattern'] = settings['maxserver'] + '/people/{0}/avatar'
     open('%s/%s' % (path, BASE_PRESET), 'w').write(json.dumps(base, indent=4, sort_keys=True))
