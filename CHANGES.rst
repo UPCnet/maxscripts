@@ -1,10 +1,17 @@
 Changelog
 =========
 
-1.2 (unreleased)
+1.2 (2013-08-05)
 ----------------
 
-- Nothing changed yet.
+- Updated cloudapis to match maxbunny.ini
+- New script for setting the max restricted user
+- make queues durable
+- Added restart tweety rule
+- Add the default exchange and queue for twitter task processing
+- Added maxclient as dependency, added new initialization for maxpush/rabbit
+- Updated the initialization of the push queue
+- Initializer for RabbitMQ
 
 
 1.1 (2013-06-26)
