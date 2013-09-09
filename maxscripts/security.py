@@ -6,14 +6,13 @@ from pyramid.settings import asbool
 from pyramid.paster import get_appsettings
 from pyramid.paster import setup_logging
 
+from devel import get_buildout_path
 
-default_security = {'roles': {"Manager": ["victor.fernandez",
-                                          "carles.bruguera",
-                                          "usuari.atenea",
-                                          "usuari.somupc"
-                                          ]
-                              }
-                    }
+buildout_path = get_buildout_path()
+users = open('{}/config/.authorized_users'.format(buildout_path)).read().split('\n')
+users = [a for a in users if a.strip()]
+
+default_security = {'roles': {"Manager": users}}
 
 
 def init_security(settings):

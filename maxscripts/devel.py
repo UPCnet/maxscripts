@@ -96,9 +96,14 @@ def _add_context(client, *args):
             print 'Oops! An error occurred...'
 
 
+def get_buildout_path():
+    buildout_path = re.search(r'^(.*?)/src|eggs.*', bigmax.__path__[0]).groups()[0]
+    return buildout_path
+
+
 def load_settings():
     save_settings = False
-    buildout_path = re.search(r'^(.*?)/src.*', bigmax.__path__[0]).groups()[0]
+    buildout_path = get_buildout_path()
     settings_file = '%s/.max_settings' % buildout_path
 
     if os.path.exists(settings_file):
