@@ -7,6 +7,7 @@ import pika
 import pymongo
 import requests
 import os
+import re
 import sys
 
 
@@ -25,12 +26,18 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
             self.clustermembers = self.config.get('app:main', 'mongodb.hosts')
             self.dbname = self.config.get('app:main', 'mongodb.db_name')
             self.replicaset = self.config.get('app:main', 'mongodb.replica_set')
-
-            self.talk_server = self.config.get('app:main', 'max.talk_server')
+            self.rabbitmq_settings = self.config.get('app:main', 'max.rabbitmq')
 
         except:
             print('You must provide a valid configuration .ini file.')
             sys.exit()
+
+    def pika_connection_params(self):
+        host, port = re.search(r'\s*(\w+):?(\d*)\s*', self.rabbitmq).groups()
+        params = {'host': host}
+        if port:
+            params['port'] = int(port)
+        return params
 
     def run(self):
         # Connect to the database
@@ -43,16 +50,14 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
             conn = pymongo.MongoReplicaSetClient(hosts, replicaSet=replica_set)
 
         db = conn[self.dbname]
-
+        pika_params = self.pika_connection_params()
         rabbit_con = pika.BlockingConnection(
-            pika.ConnectionParameters(
-                host=self.talk_server
-            )
+            pika.ConnectionParameters(**pika_params)
         )
         channel = rabbit_con.channel()
 
         current_conversations = set([unicode(conv['_id']) for conv in db.conversations.find({}, {'_id': 1})])
-        req = requests.get('http://{}:15672/api/exchanges'.format(self.talk_server), auth=('victor.fernandez', ''))
+        req = requests.get('http://{}:15672/api/exchanges'.format(pika_params['host']), auth=('victor.fernandez', ''))
         if req.status_code != 200:
             print('Error getting current exchanges from RabbitMQ server.')
         current_exchanges = req.json()
