@@ -33,7 +33,7 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
             sys.exit()
 
     def pika_connection_params(self):
-        host, port = re.search(r'\s*(\w+):?(\d*)\s*', self.rabbitmq).groups()
+        host, port = re.search(r'\s*(\w+):?(\d*)\s*', self.rabbitmq_settings).groups()
         params = {'host': host}
         if port:
             params['port'] = int(port)
