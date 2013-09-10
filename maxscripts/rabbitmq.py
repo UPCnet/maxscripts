@@ -27,12 +27,14 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
             self.dbname = self.config.get('app:main', 'mongodb.db_name')
             self.replicaset = self.config.get('app:main', 'mongodb.replica_set')
             self.rabbitmq_settings = self.config.get('app:main', 'max.rabbitmq')
+            self.rabbitmq_manage_port = self.config.get('app:main', 'max.rabbitmq-manage')
 
         except:
             print('You must provide a valid configuration .ini file.')
             sys.exit()
 
-    def pika_connection_params(self):
+    def pika_connection_params(self, ):
+        # Extraxt rabbitmq host:port settings
         host, port = re.search(r'\s*(\w+):?(\d*)\s*', self.rabbitmq_settings).groups()
         params = {'host': host}
         if port:
@@ -57,7 +59,7 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
         channel = rabbit_con.channel()
 
         current_conversations = set([unicode(conv['_id']) for conv in db.conversations.find({}, {'_id': 1})])
-        req = requests.get('http://{}:15672/api/exchanges'.format(pika_params['host']), auth=('victor.fernandez', ''))
+        req = requests.get('http://{}:{}/api/exchanges'.format(pika_params['host'], self.rabbitmq_manage_port), auth=('victor.fernandez', ''))
         if req.status_code != 200:
             print('Error getting current exchanges from RabbitMQ server.')
         current_exchanges = req.json()
