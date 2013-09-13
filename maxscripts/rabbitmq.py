@@ -50,10 +50,11 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
         channel = rabbit_con.channel()
 
         current_conversations = set([unicode(conv['_id']) for conv in db.conversations.find({}, {'_id': 1})])
-        req = requests.get(self.rabbitmq_manage_url, auth=('guest', 'guest'))
+        req = requests.get('{}/api/exchanges'.format(self.rabbitmq_manage_url), auth=('guest', 'guest'))
         if req.status_code != 200:
             print('Error getting current exchanges from RabbitMQ server.')
         current_exchanges = req.json()
+
         current_exchanges = set([exchange.get('name') for exchange in current_exchanges])
 
         to_add = current_conversations - current_exchanges
