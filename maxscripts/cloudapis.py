@@ -66,15 +66,14 @@ def main(argv=sys.argv, quiet=False):  # pragma: no cover
         '-a', '--cloudapis',
         dest='cloudapisfile',
         type=str,
-        required=True,
+        default='config/cloudapis.ini',
         help=("Cloudapis configuration file"))
     parser.add_argument(
         '-c', '--config',
         dest='commonfile',
         type=str,
-        required=True,
+        default='config/common.ini',
         help=("Common configuration file"))
     options = parser.parse_args()
-
     command = UpdateCloudAPISettings(options, quiet)
     return command.run()
