@@ -42,6 +42,6 @@ setup(name='maxscripts',
       max.report = maxscripts.report:main
       max.cloudapis = maxscripts.cloudapis:main
       max.rabbit = maxscripts.rabbitmq:main
-      max.setrestricted = maxscripts.setrestricted:main
+      max.newinstance = maxscripts.newinstance:main
       """,
       )
