@@ -14,7 +14,7 @@ from pyramid.paster import (
 
 USAGE = """
 
-usage: %s add|list user|context|subscription
+usage: %s add|mod|get user|context|subscription
 
 """
 
@@ -32,7 +32,7 @@ def login():
 
 
 def doAction(client, action, target, *args):
-    if action not in ['add', 'get']:
+    if action not in ['add', 'get', 'mod']:
         print "Unknwon action '%s'" % action
         sys.exit(1)
     if target not in ['user', 'context', 'subscription']:
@@ -76,6 +76,56 @@ def _add_user(client, *args):
             print 'Oops! An error occurred...'
         else:
             print 'Done.'
+
+
+def _mod_context(client, *args):
+    if len(args) == 0:
+        url = raw_input('Context URL: ')
+    if len(args) < 2:
+        field = raw_input('Field to modify: ')
+    if len(args) < 3:
+        value = raw_input('Field value: ')
+
+    if len(args) > 0:
+        url = args[0]
+    if len(args) > 1:
+        field = args[1]
+    if len(args) > 2:
+        value = args[2]
+
+    if url and field and value:
+        properties = {}
+        properties[field] = value
+        req = client.modifyContext(url, properties)
+        if req[0] in [200, 201]:
+            print 'Done'
+        else:
+            print 'Oops! An error occurred...'
+
+
+def _mod_user(client, *args):
+    if len(args) == 0:
+        username = raw_input('Username: ')
+    if len(args) < 2:
+        field = raw_input('Field to modify: ')
+    if len(args) < 3:
+        value = raw_input('Field value: ')
+
+    if len(args) > 0:
+        username = args[0]
+    if len(args) > 1:
+        field = args[1]
+    if len(args) > 2:
+        value = args[2]
+
+    if username and field and value:
+        properties = {}
+        properties[field] = value
+        req = client.modifyUser(username, properties)
+        if req[0] in [200, 201]:
+            print 'Done'
+        else:
+            print 'Oops! An error occurred...'
 
 
 def _add_context(client, *args):
