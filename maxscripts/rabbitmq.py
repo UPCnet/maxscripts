@@ -30,7 +30,7 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
             self.replicaset = self.common.get('mongodb', 'replica_set')
             self.rabbitmq_url = self.common.get('rabbitmq', 'server')
             self.rabbitmq_manage_url = self.common.get('rabbitmq', 'manage')
-            self.maxserver_names = [maxserver.split('_')[-1] for maxserver in self.instances.sections() if maxserver.startswith('max_')]
+            self.maxserver_names = [maxserver for maxserver in self.instances.sections() if maxserver.startswith('max_')]
 
         except:
             print('You must provide a valid configuration .ini file.')
@@ -52,7 +52,7 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
 
         for dbname in self.maxserver_names:
             print('')
-            print('Initializing and purging RabbitMQ server for "{}" max instance'.format(dbname))
+            print('Initializing and purging RabbitMQ server for "{}" max instance'.format(dbname.split('_')[-1]))
             print('')
 
             db = conn[dbname]
@@ -67,22 +67,29 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
             current_exchanges = set([exchange.get('name') for exchange in current_exchanges])
 
             to_add = current_conversations - current_exchanges
-            to_delete = current_exchanges - current_conversations
+
+            # to_delete = current_exchanges - current_conversations
 
             # Exclude the default Rabbit exchange
-            to_delete = to_delete - set([u''])
+            # to_delete = to_delete - set([u''])
 
             # Delete orphaned exchanges in RabbitMQ
-            for exdel in to_delete:
-                if not exdel.startswith('amq') and not exdel.startswith('new'):
-                    channel.exchange_delete(exdel)
-                    print("  > Added exchange {}".format(exdel))
+            # for exdel in to_delete:
+            #     if not exdel.startswith('amq') and not exdel.startswith('new') \
+            #        and not exdel.startswith('twitter'):
+            #         channel.exchange_delete(exdel)
+            #         print("  > Added exchange {}".format(exdel))
+
+            # Create the default push queue
+            channel.queue_declare("push", durable=True)
+            print("  > Declared 'push' queue.")
 
             # Add missing exchanges in RabbitMQ
             for exadd in to_add:
                 channel.exchange_declare(exchange=exadd,
                                          durable=True,
                                          type='fanout')
+                channel.queue_bind(exchange=exadd, queue="push")
                 print("  > Added exchange {}".format(exadd))
 
             # Create default exchange if not created yet
@@ -90,10 +97,6 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
                                      durable=True,
                                      type='direct')
             print("  > Declared 'new' exchange.")
-
-            # Create the default push queue
-            channel.queue_declare("push", durable=True)
-            print("  > Declared 'push' queue.")
 
             # Create twitter exchange if not created yet
             channel.exchange_declare(exchange='twitter',
