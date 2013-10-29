@@ -1,11 +1,16 @@
 Changelog
 =========
 
-1.3.1 (unreleased)
+1.3.2 (unreleased)
 ------------------
 
 - Nothing changed yet.
 
+
+1.3.1 (unreleased)
+------------------
+
+* Disable delete orphaned exchanges [Victor Fernandez de Alba]
 
 1.3 (2013-10-03)
 ----------------
