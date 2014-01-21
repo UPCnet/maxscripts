@@ -14,7 +14,7 @@ requires = [
 ]
 
 setup(name='maxscripts',
-      version='1.3.2',
+      version='1.3.3.dev0',
       description='maxscripts',
       long_description=README + '\n\n' + CHANGES,
       classifiers=[
