@@ -1,11 +1,10 @@
 Changelog
 =========
 
-1.3.2 (unreleased)
+1.3.2 (2014-01-21)
 ------------------
 
-- Nothing changed yet.
-
+* Fix get_directory_path [Victor Fernandez de Alba]
 
 1.3.1 (unreleased)
 ------------------
