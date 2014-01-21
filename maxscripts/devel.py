@@ -147,7 +147,7 @@ def _add_context(client, *args):
 
 
 def get_buildout_path():
-    buildout_path = re.search(r'^(.*?)/src|eggs.*', bigmax.__path__[0]).groups()[0]
+    buildout_path = re.search(r'^(.*?)/(src|eggs).*', bigmax.__path__[0]).groups()[0]
     return buildout_path
 
 
