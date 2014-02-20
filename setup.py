@@ -43,5 +43,6 @@ setup(name='maxscripts',
       max.cloudapis = maxscripts.cloudapis:main
       max.rabbit = maxscripts.rabbitmq:main
       max.newinstance = maxscripts.newinstance:main
+      max.mongoindexes = maxscripts.mongoindexes:main
       """,
       )
