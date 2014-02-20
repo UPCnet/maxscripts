@@ -1,11 +1,10 @@
 Changelog
 =========
 
-1.3.3 (unreleased)
+1.3.3 (2014-02-20)
 ------------------
 
-- Nothing changed yet.
-
+* Add mongoindexes script [Carles Bruguera]
 
 1.3.2 (2014-01-21)
 ------------------
