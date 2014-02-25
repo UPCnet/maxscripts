@@ -166,7 +166,12 @@ def load_settings():
         settings['maxserver'] = url
         save_settings = True
 
-    client = MaxClient(settings['maxserver'])
+    if 'oauthserver' not in settings:
+        oauthurl = raw_input("OAuth server URL: ")
+        settings['oauthserver'] = oauthurl
+        save_settings = True
+
+    client = MaxClient(settings['maxserver'], oauth_server=settings['oauthserver'])
 
     if 'token' not in settings or 'username' not in settings:
         username, password = login()
