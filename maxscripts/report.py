@@ -22,16 +22,19 @@ TABLE_TEMPLATE = """
 """
 
 
-def parseParams(params):
+def parseParams(function_params):
     new_params = {}
-    for key, value in params.items():
-        is_string = re.match(r'u?^[\'\"](.*?)[\'\"]$', value)
-        is_list = re.match(r'^(\[.*?\])$', value)
-        if is_string:
-            newvalue = is_string.groups()[0]
-        elif is_list:
-            newvalue = eval(is_list.group())
-        new_params[key] = newvalue
+    if '=' in function_params:
+        params = dict(re.findall(r'([\w_]+)=([\'"\[][\w_\'\", ]+[\'"\]])', function_params))
+
+        for key, value in params.items():
+            is_string = re.match(r'u?^[\'\"](.*?)[\'\"]$', value)
+            is_list = re.match(r'^(\[.*?\])$', value)
+            if is_string:
+                newvalue = is_string.groups()[0]
+            elif is_list:
+                newvalue = eval(is_list.group())
+            new_params[key] = newvalue
     return new_params
 
 
@@ -147,37 +150,34 @@ def main(argv=sys.argv):
                             f_params, extra_view_configs, f_name, f_code = fun
 
                             # Save first occurrence of view config
-                            views = [(f_params, f_name, f_code), ]
+                            views = [(parseParams(f_params), f_name, f_code), ]
 
                             # Search ant store extra @view_config statements
                             extra_params = (re.findall('\((.*?)\)', extra_view_configs))
                             for extra_param in extra_params:
-                                views.append((extra_param, f_name, f_code))
-
-                            if 'getUserAvatar' in f_name:
-                                import ipdb;ipdb.set_trace()
+                                parsed_params = parseParams(extra_param)
+                                if parsed_params:
+                                    views.append((parsed_params, f_name, f_code))
 
                             for function_params, function_name, function_code in views:
-                                params = dict(re.findall(r'([\w_]+)=([\'"\[][\w_\'\", ]+[\'"\]])', function_params))
-                                params = parseParams(params)
                                 if not 'HTTPNotImplemented' in function_code:
                                     total_functions += 1
                                     try:
-                                        method = params['request_method'].upper()
+                                        method = function_params['request_method'].upper()
                                         code_key = 'methods'
-                                        if 'restricted' in params.keys() or resources[params['route_name']]['route'].startswith('/admin'):
+                                        if 'restricted' in function_params.keys() or resources[function_params['route_name']]['route'].startswith('/admin'):
                                             code_key = 'restricted_' + code_key
-                                            restricted_routes_with_code.append(params['route_name'])
+                                            restricted_routes_with_code.append(function_params['route_name'])
 
-                                        resources[params['route_name']].setdefault(code_key, {})
+                                        resources[function_params['route_name']].setdefault(code_key, {})
                                         startline, endline = getFunctionLineNumbers(code, function_code)
                                         view_info = {
                                             'url': '{}/{}'.format(github_base_url, filename.split('src/max/')[-1]),
                                             'startline': startline,
                                             'endline': endline}
-                                        resources[params['route_name']][code_key][method] = view_info
+                                        resources[function_params['route_name']][code_key][method] = view_info
                                         if "HEAD" in function_code and 'request.method' in function_code:
-                                            resources[params['route_name']][code_key]['HEAD'] = view_info
+                                            resources[function_params['route_name']][code_key]['HEAD'] = view_info
                                     except:
                                         pass
 
