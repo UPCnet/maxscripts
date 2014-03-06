@@ -141,32 +141,45 @@ def main(argv=sys.argv):
             if os.path.isfile(filename):
                 if filename.endswith('.py'):
                     code = open(filename).read()
-                    function_lines = re.findall(r'\n\s*@view_config\((.*?)\).*?def\s+([^\(]+)(.*?)(?=\n+(?:[^\s]|$)+)', code, re.DOTALL)
+                    function_lines = re.findall(r'\n\s*@view_config\((.*?)\)(.*?)def\s+([^\(]+)(.*?)(?=\n+(?:[^\s]|$)+)', code, re.DOTALL)
                     if function_lines:
                         for fun in function_lines:
-                            function_params, function_name, function_code = fun
-                            params = dict(re.findall(r'([\w_]+)=([\'"\[][\w_\'\", ]+[\'"\]])', function_params))
-                            params = parseParams(params)
-                            if not 'HTTPNotImplemented' in function_code:
-                                total_functions += 1
-                                try:
-                                    method = params['request_method'].upper()
-                                    code_key = 'methods'
-                                    if 'restricted' in params.keys() or resources[params['route_name']]['route'].startswith('/admin'):
-                                        code_key = 'restricted_' + code_key
-                                        restricted_routes_with_code.append(params['route_name'])
+                            f_params, extra_view_configs, f_name, f_code = fun
 
-                                    resources[params['route_name']].setdefault(code_key, {})
-                                    startline, endline = getFunctionLineNumbers(code, function_code)
-                                    view_info = {
-                                        'url': '{}/{}'.format(github_base_url, filename.split('src/max/')[-1]),
-                                        'startline': startline,
-                                        'endline': endline}
-                                    resources[params['route_name']][code_key][method] = view_info
-                                    if "HEAD" in function_code and 'request.method' in function_code:
-                                        resources[params['route_name']][code_key]['HEAD'] = view_info
-                                except:
-                                    pass
+                            # Save first occurrence of view config
+                            views = [(f_params, f_name, f_code), ]
+
+                            # Search ant store extra @view_config statements
+                            extra_params = (re.findall('\((.*?)\)', extra_view_configs))
+                            for extra_param in extra_params:
+                                views.append((extra_param, f_name, f_code))
+
+                            if 'getUserAvatar' in f_name:
+                                import ipdb;ipdb.set_trace()
+
+                            for function_params, function_name, function_code in views:
+                                params = dict(re.findall(r'([\w_]+)=([\'"\[][\w_\'\", ]+[\'"\]])', function_params))
+                                params = parseParams(params)
+                                if not 'HTTPNotImplemented' in function_code:
+                                    total_functions += 1
+                                    try:
+                                        method = params['request_method'].upper()
+                                        code_key = 'methods'
+                                        if 'restricted' in params.keys() or resources[params['route_name']]['route'].startswith('/admin'):
+                                            code_key = 'restricted_' + code_key
+                                            restricted_routes_with_code.append(params['route_name'])
+
+                                        resources[params['route_name']].setdefault(code_key, {})
+                                        startline, endline = getFunctionLineNumbers(code, function_code)
+                                        view_info = {
+                                            'url': '{}/{}'.format(github_base_url, filename.split('src/max/')[-1]),
+                                            'startline': startline,
+                                            'endline': endline}
+                                        resources[params['route_name']][code_key][method] = view_info
+                                        if "HEAD" in function_code and 'request.method' in function_code:
+                                            resources[params['route_name']][code_key]['HEAD'] = view_info
+                                    except:
+                                        pass
 
     print ' > Found {} active view definitions'.format(total_functions)
 
