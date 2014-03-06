@@ -230,7 +230,7 @@ def main(argv=sys.argv):
                         resources[match_route[0]]['restricted_tests'].append(test_info)
                     else:
                         if 'test_manager' in user:
-                            print 'mismatched user'
+                            print ' X mismatched user "{}" on {} line {}, route {}'.format(user, filename, line, route)
                         resources[match_route[0]].setdefault('tests', [])
                         resources[match_route[0]]['tests'].append(test_info)
                 else:
