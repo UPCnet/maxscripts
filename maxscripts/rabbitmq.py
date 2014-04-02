@@ -1,13 +1,11 @@
-from maxclient import MaxClient
+from maxcarrot import RabbitServer
 
-import argparse
 import ConfigParser
+import argparse
 import json
-import pika
 import pymongo
-import requests
-import os
 import re
+import requests
 import sys
 
 
@@ -37,6 +35,21 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
             sys.exit()
 
     def run(self):
+
+        def get_exchange_info():
+            req = requests.get('{}/api/exchanges/%2F'.format(self.rabbitmq_manage_url), auth=('guest', 'guest'))
+            return req.json()
+
+        def delete_old_exchanges(exchanges):
+            for exchange in exchanges:
+                if re.match(r'[0-9A-Fa-f]{24}', exchange['name']):
+                    print 'Deleting ancient exchange {}'.format(exchange['name'])
+                    requests.delete(
+                        '{}/api/exchanges/%2F/{}'.format(self.rabbitmq_manage_url, exchange['name']),
+                        data=json.dumps({'vhost': '/', 'name': exchange['name']}),
+                        auth=('guest', 'guest')
+                    )
+
         # Connect to the database
         if not self.cluster in ['true', 'True', '1', 1]:
             db_uri = self.standaloneserver
@@ -46,9 +59,8 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
             replica_set = self.replicaset
             conn = pymongo.MongoReplicaSetClient(hosts, replicaSet=replica_set)
 
-        rabbit_con = pika.BlockingConnection(
-            pika.URLParameters(self.rabbitmq_url)
-        )
+        server = RabbitServer(self.rabbitmq_url)
+        delete_old_exchanges(get_exchange_info())
 
         for dbname in self.maxserver_names:
             print('')
@@ -56,63 +68,29 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
             print('')
 
             db = conn[dbname]
-            channel = rabbit_con.channel()
 
-            current_conversations = set([unicode(conv['_id']) for conv in db.conversations.find({}, {'_id': 1})])
-            req = requests.get('{}/api/exchanges'.format(self.rabbitmq_manage_url), auth=('guest', 'guest'))
-            if req.status_code != 200:
-                print('  > Error getting current exchanges from RabbitMQ server.')
-            current_exchanges = req.json()
+            # Get all users to create their rabbit exchange and bindings
+            users = db.users.find({}, {'_id': 0, 'username': 1, 'talkingIn': 1, 'subscribedTo': 1})
 
-            current_exchanges = set([exchange.get('name') for exchange in current_exchanges])
+            for user in users:
+                server.create_user(user['username'])
+                print 'Created exchanges for user {}'.format(user['username'])
 
-            to_add = current_conversations - current_exchanges
+                # Create bindings between user read/write exchanges and conversations exchange
+                for conversation in user.get('talkingIn', []):
+                    server.conversations.bind_user(conversation['id'], user['username'])
 
-            # to_delete = current_exchanges - current_conversations
+                print 'Created {} conversation bindings for user {}'.format(len(user['talkingIn']), user['username'])
+                # Create bindings between user read exchange and activity exchange
+                created = 0
+                for subscription in user.get('subscribedTo', []):
+                    context = db.contexts.find_one({'hash': subscription['hash']}, {'_id': 0, 'hash': 1, 'notifications': 1})
+                    if context.get('notifications', False):
+                        created += 1
+                        server.activity.bind_user(context['hash'], user['username'])
 
-            # Exclude the default Rabbit exchange
-            # to_delete = to_delete - set([u''])
-
-            # Delete orphaned exchanges in RabbitMQ
-            # for exdel in to_delete:
-            #     if not exdel.startswith('amq') and not exdel.startswith('new') \
-            #        and not exdel.startswith('twitter'):
-            #         channel.exchange_delete(exdel)
-            #         print("  > Added exchange {}".format(exdel))
-
-            # Create the default push queue
-            channel.queue_declare("push", durable=True)
-            print("  > Declared 'push' queue.")
-
-            # Add missing exchanges in RabbitMQ
-            for exadd in to_add:
-                channel.exchange_declare(exchange=exadd,
-                                         durable=True,
-                                         type='fanout')
-                channel.queue_bind(exchange=exadd, queue="push")
-                print("  > Added exchange {}".format(exadd))
-
-            # Create default exchange if not created yet
-            channel.exchange_declare(exchange='new',
-                                     durable=True,
-                                     type='direct')
-            print("  > Declared 'new' exchange.")
-
-            # Create twitter exchange if not created yet
-            channel.exchange_declare(exchange='twitter',
-                                     durable=True,
-                                     type='fanout')
-            print("  > Declared 'twitter' exchange.")
-            # Create the default twitter queue
-            channel.queue_declare("twitter", durable=True)
-            print("  > Declared 'twitter' queue.")
-            channel.queue_declare("tweety_restart", durable=True)
-            print("  > Declared 'tweety_restart' queue.")
-            channel.queue_bind(exchange="twitter", queue="twitter")
-            print("  > Binded 'twitter' queue to 'twitter' exchange.")
-
-            print('  > Done.')
-            print('')
+                print 'Created {} context bindings for user {}'.format(created, user['username'])
+        server.disconnect()
 
 
 def main(argv=sys.argv, quiet=False):  # pragma: no cover
