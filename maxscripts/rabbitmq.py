@@ -59,7 +59,7 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
             replica_set = self.replicaset
             conn = pymongo.MongoReplicaSetClient(hosts, replicaSet=replica_set)
 
-        server = RabbitServer(self.rabbitmq_url)
+        server = RabbitServer(self.rabbitmq_url, declare=True)
         delete_old_exchanges(get_exchange_info())
 
         for dbname in self.maxserver_names:
