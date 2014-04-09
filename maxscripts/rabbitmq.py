@@ -50,6 +50,15 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
                         auth=('guest', 'guest')
                     )
 
+        def purge_exchanges(exchanges):
+            for exchange in exchanges:
+                print 'Deleting exchange {}'.format(exchange['name'])
+                requests.delete(
+                    '{}/api/exchanges/%2F/{}'.format(self.rabbitmq_manage_url, exchange['name']),
+                    data=json.dumps({'vhost': '/', 'name': exchange['name']}),
+                    auth=('guest', 'guest')
+                )
+
         # Connect to the database
         if not self.cluster in ['true', 'True', '1', 1]:
             db_uri = self.standaloneserver
@@ -59,8 +68,10 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
             replica_set = self.replicaset
             conn = pymongo.MongoReplicaSetClient(hosts, replicaSet=replica_set)
 
-        server = RabbitServer(self.rabbitmq_url, declare=True)
         delete_old_exchanges(get_exchange_info())
+        purge_exchanges(get_exchange_info())
+
+        server = RabbitServer(self.rabbitmq_url, declare=True)
 
         for dbname in self.maxserver_names:
             print('')
