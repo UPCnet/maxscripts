@@ -1,11 +1,16 @@
 Changelog
 =========
 
-1.3.4 (unreleased)
+4.0.0 (2014-04-15)
 ------------------
 
-- Nothing changed yet.
-
+* Clean all exchanges [Carles Bruguera]
+* Declare exchanges [Carles Bruguera]
+* Refactor scripts to adapt to new architecture [Carles Bruguera]
+* Show more information when a mismatched user found [Carles Bruguera]
+* Don't report twice [Carles Bruguera]
+* Don't miss N*view_config statements on a method [Carles Bruguera]
+* allow custom oauth server [Carles Bruguera]
 
 1.3.3 (2014-02-20)
 ------------------
