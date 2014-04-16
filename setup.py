@@ -12,6 +12,7 @@ requires = [
     'maxcarrot',
     'prettytable',
     'sh',
+    'haigha'
 ]
 
 setup(name='maxscripts',
