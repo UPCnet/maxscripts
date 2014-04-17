@@ -44,7 +44,7 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
 
         # Clear all non-native exchanges and queues
         print 'Cleaning up rabbitmq'
-        server.management.cleanup(delete_all=True)
+        server.management.cleanup()
 
         # Create all exchanges and queues defined in spec
         server.declare()
@@ -77,14 +77,13 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
             start = time.time()
 
             print "Creating exchanges and bindings"
-
+            count = 1
             for user in users:
 
-                if server.user_publish_exchange(user['username']) not in server.management.exchanges_by_name or \
-                   server.user_subscribe_exchange(user['username']) not in server.management.exchanges_by_name:
+                server.create_user(user['username'])
+                print '{}/{} Created exchanges for {}'.format(count, len(users), user['username'])
 
-                    server.create_user(user['username'])
-                    print 'Created exchanges for {}'.format(user['username'])
+                count += 1
 
                 conversations = user.get('talkingIn', [])
                 # Create bindings between user read/write exchanges and conversations exchange
