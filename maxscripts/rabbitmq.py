@@ -44,7 +44,7 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
 
         # Clear all non-native exchanges and queues
         print 'Cleaning up rabbitmq'
-        server.management.cleanup()
+        server.management.cleanup(delete_all=self.options.deleteall)
 
         # Create all exchanges and queues defined in spec
         server.declare()
@@ -128,6 +128,12 @@ def main(argv=sys.argv, quiet=False):  # pragma: no cover
         type=str,
         default='config/common.ini',
         help=("Common configuration file"))
+    parser.add_argument(
+        '-d', '--delete-all',
+        dest='deleteall',
+        type=bool,
+        default=False,
+        help=("Delete all exchanges and queues first"))
     options = parser.parse_args()
 
     command = InitAndPurgeRabbitServer(options, quiet)
