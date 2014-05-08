@@ -1,11 +1,13 @@
 Changelog
 =========
 
-4.0.1 (unreleased)
+4.0.1 (2014-05-08)
 ------------------
 
-- Nothing changed yet.
-
+* Add a parameter to disable selective purge [Carles Bruguera]
+* Declare everythin always [Carles Bruguera]
+* Don't delete all [Carles Bruguera]
+* Adapt to new maxcarrot [Carles Bruguera]
 
 4.0.0 (2014-04-15)
 ------------------
