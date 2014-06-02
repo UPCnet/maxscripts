@@ -1,11 +1,10 @@
 Changelog
 =========
 
-4.0.2 (unreleased)
+4.0.2 (2014-06-02)
 ------------------
 
-- Nothing changed yet.
-
+* Fix bigmax dependency [Carles Bruguera]
 
 4.0.1 (2014-05-08)
 ------------------
