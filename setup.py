@@ -12,7 +12,10 @@ requires = [
     'maxcarrot',
     'prettytable',
     'sh',
-    'haigha'
+    'haigha',
+    'docopt',
+    'websocket-client',
+    'stomp.py'
 ]
 
 setup(name='maxscripts',
@@ -46,5 +49,6 @@ setup(name='maxscripts',
       max.rabbit = maxscripts.rabbitmq:main
       max.newinstance = maxscripts.newinstance:main
       max.mongoindexes = maxscripts.mongoindexes:main
+      utalk = maxscripts.utalkclient:main
       """,
       )
