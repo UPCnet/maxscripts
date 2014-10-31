@@ -14,8 +14,7 @@ requires = [
     'sh',
     'haigha',
     'docopt',
-    'websocket-client',
-    'stomp.py'
+    'pymongo'
 ]
 
 setup(name='maxscripts',
@@ -49,6 +48,5 @@ setup(name='maxscripts',
       max.rabbit = maxscripts.rabbitmq:main
       max.newinstance = maxscripts.newinstance:main
       max.mongoindexes = maxscripts.mongoindexes:main
-      utalk = maxscripts.utalkclient:main
       """,
       )
