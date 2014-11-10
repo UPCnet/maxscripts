@@ -1,9 +1,16 @@
 """MAX loadtester
 
 Usage:
-    max.loadtest utalk <maxserver>
+    max.loadtest utalk <maxserver> [options]
 
 Options:
+    -r <username>, --username <username>            Username of the max restricted user
+    -p <password>, --password <password>            Password for the max restricted user
+    -s <utalkserver>, --utalkserver <utalkserver>   Url of the sockjs endpoint
+    -t <transport>, --transport                     Transport used, can be websocket, xhr, xhr_streaming [default: websocket]
+    -c <num_conv>, --conversations <num_conv>       Number of conversations to start [default: 1]
+    -u <num_users>, --users <num_users>             Number of users per conversation [default: 2]
+    -m <num_msg>, --messages <num_mg>               Number of messages each user will send [default: 3]
 """
 
 from docopt import docopt
@@ -31,16 +38,16 @@ class ReadyCounter(object):
 
 
 class MaxHelper(object):
-    def __init__(self, maxserver):
+    def __init__(self, maxserver, username=None, password=None):
         self.maxserver = maxserver
         self.max = MaxClient(maxserver)
-        self.login()
+        self.max.login(username, password)
 
     def create_users(self, basename, count, index=0):
         created = []
-        for i in range(index, count):
+        for i in xrange(index, index + count):
             username = '{}_{:0>4}'.format(basename, i)
-            self.max.people[username].post()
+            #self.max.people[username].get()
             created.append(username)
         return created
 
@@ -49,32 +56,32 @@ class MaxHelper(object):
         client = MaxClient(self.maxserver, actor=creator)
         conversation = client.conversations.post(
             object_content='First Message',
-            contexts={
+            contexts=[{
                 "objectType": "conversation",
                 "participants": users,
                 "displayName": displayname
-            })
-        return conversation.id
+            }])
+        return client.conversations[conversation['contexts'][0]['id']].get()
 
     def delete_conversation_and_users(self, conversation):
         client = MaxClient(self.maxserver, actor=conversation['creator'])
         users = conversation['participants']
         client.conversations[conversation['id']].delete()
 
-        for user in users:
-            self.max.people[user['username']].delete()
+        #for user in users:
+        #    self.max.people[user['username']].delete()
 
 
 class LoadTestScenario(object):
 
-    def __init__(self, maxserver):
+    def __init__(self, maxserver, username, password):
         self.maxserver = maxserver
-        self.maxhelper = MaxHelper(self.maxserver)
+        self.maxhelper = MaxHelper(self.maxserver, username, password)
 
     def setup(self, num_conversations, users_per_conversation, messages_per_user):
         self.num_conversations = num_conversations
         self.users_per_conversation = users_per_conversation
-        self.messages_per_user
+        self.messages_per_user = messages_per_user
 
         self.total_users = num_conversations * users_per_conversation
 
@@ -82,25 +89,21 @@ class LoadTestScenario(object):
         self.clients = []
 
         os.system('clear')
+        print
 
-        print '=================================='
-        print " Seting up users and conversations"
-        print '=================================='
+        print " > Creating {} users and {} conversations".format(self.total_users, self.num_conversations)
 
         user_index = 0
 
-        for conversation_index in range(self.num_conversations):
+        for conversation_index in xrange(self.num_conversations):
             conversation_name = 'conversation_{:0>4}'.format(self.num_conversations)
-            users = self.maxhelper.createUsers('user', self.users_per_conversation, user_index)
-            new_conversation = self.maxhelper.createConversation(conversation_name, users)
+            users = self.maxhelper.create_users('user', self.users_per_conversation, user_index)
+            self.maxhelper.create_users('user', self.users_per_conversation, user_index)
+            new_conversation = self.maxhelper.create_conversation(conversation_name, users)
             self.conversations.append(new_conversation)
             user_index += len(users)
 
-        print
-        print '============================='
-        print " Creating {} Test Clients".format(self.total_users)
-        print '============================='
-        print
+        print " > Creating {} Test Clients".format(self.total_users)
 
         # Syncronization primitives
         self.wait_for_others = AsyncResult()
@@ -111,7 +114,7 @@ class LoadTestScenario(object):
                 utalk_client = UTalkTestClient(
                     self.maxserver,
                     user['username'],
-                    'password_not_needed',
+                    token_login='password_not_needed',
                     quiet=True,
                     use_gevent=True
                 )
@@ -119,46 +122,130 @@ class LoadTestScenario(object):
                 utalk_client.setup(
                     conversation['id'],
                     self.messages_per_user,
-                    self.messages_per_user * len(conversation['participants'] - 1),
+                    self.messages_per_user * (len(conversation['participants']) - 1),
                     self.counter
                 )
 
                 self.clients.append(utalk_client)
 
     def teardown(self):
-        for client in self.clients:
-            client.teardown()
+        print " > Test Teardown"
+        # gevent.killall(self.greenlets)
+
+        # for client in self.clients:
+        #     client.teardown()
 
         for conversation in self.conversations:
             self.maxhelper.delete_conversation_and_users(conversation)
 
     def run(self):
-        try:
-            self.test()
-        except:
-            pass
+        return self.test()
+        # try:
+        #     return self.test()
+        # except Exception as exc:
+        #     print exc
+        #     print exc.message
+        #     return False
+
+    def stats(self):
+        print ' > Harvesting stats'
+        # Collect information harvested by each client
+        # connect_times = [a.value.join_time for a in messenger_threads]
+        # message_times = [a.value.seconds_per_message for a in messenger_threads]
+
+        # first_message_time = min([a.value.start_talking_time for a in messenger_threads])
+        # last_message_time = min([a.value.end_talking_time for a in messenger_threads])
+        # total_sending_time = last_message_time - first_message_time
+        # total_sending_time = total_sending_time.total_seconds()
+
+        all_recv_times = []
+        all_ackd_times = []
+
+        for client in self.clients:
+            all_recv_times += client.stats['recv_times']
+            all_ackd_times += client.stats['ackd_times']
+
+        average_recv_time = sum(all_recv_times) / len(all_recv_times)
+        average_ackd_time = sum(all_ackd_times) / len(all_ackd_times)
+
+        min_recv_time = min(all_recv_times)
+        max_recv_time = max(all_recv_times)
+
+        min_ackd_time = min(all_ackd_times)
+        max_ackd_time = max(all_ackd_times)
+
+        all_ackd_times.sort()
+        all_recv_times.sort()
+
+        median_recv_time = all_recv_times[len(all_recv_times) / 2]
+        median_ackd_time = all_ackd_times[len(all_ackd_times) / 2]
+
+        print
+        print ' RESULTS'
+        print '---------'
+        print
+        print ' Conversations: %d' % self.num_conversations
+        print ' Users per conversation: %d' % self.users_per_conversation
+        print ' Total concurrent users: %d ' % self.total_users
+        print
+        # print ' Time to connect to maxtalk'
+        # print '----------------------------'
+        # print ' AVERAGE : %.2f seconds' % (sum(connect_times) / len(messenger_threads))
+        # print ' MIN     : %.2f seconds' % (min(connect_times))
+        # print ' MAX     : %.2f seconds' % (max(connect_times))
+        print
+        print 'Message reception times'
+        print '------------------------------------'
+        print ' AVERAGE : %.2f seconds/message' % (average_recv_time)
+        print ' MEDIAN : %.2f seconds/message' % (median_recv_time)
+        print ' MIN     : %.2f seconds/message' % (min_recv_time)
+        print ' MAX     : %.2f seconds/message' % (max_recv_time)
+        print
+
+        print
+        print 'Message acknowledge times'
+        print '------------------------------------'
+        print ' AVERAGE : %.2f seconds/message' % (average_ackd_time)
+        print ' MEDIAN : %.2f seconds/message' % (median_ackd_time)
+        print ' MIN     : %.2f seconds/message' % (min_ackd_time)
+        print ' MAX     : %.2f seconds/message' % (max_ackd_time)
+        print
 
     def test(self):
-        greenlets = [gevent.spawn(client.connect) for client in self.clients]
-        gevent.joinall(greenlets, timeout=120, raise_error=True)
-        success = None not in [g.value for g in greenlets]
+
+        print " > Testing: sending {} messages".format(self.total_users * self.messages_per_user)
+
+        self.greenlets = [gevent.spawn(client.start) for client in self.clients]
+        gevent.joinall(self.greenlets, raise_error=True)
+        success = False not in [client.succeded() for client in self.clients]
 
         if success:
-            print 'Load Test succeded'
+            print ' > Load Test finished, all messages received'
+            return True
         else:
-            print 'Load Test failed'
+            print ' > Load Test failed'
+            for client in self.clients:
+                if not client.succeded():
+                    print '{} AKCD:{}, RECV:{}'.format(client.username, client.ackd_messages, client.received_messages)
+            return False
 
 
 def main(argv=sys.argv):
     arguments = docopt(__doc__, version='MAX loadtester 1.0')
 
-    maxserver = arguments.get('maxserver')
-    num_conversations = 1
-    users_per_conversation = 2
-    messages_per_user = 3
+    maxserver = arguments.get('<maxserver>')
 
-    test = LoadTestScenario(maxserver)
+    max_user = arguments.get('--username')
+    max_user_password = arguments.get('--password')
+
+    num_conversations = int(arguments.get('--conversations'))
+    users_per_conversation = int(arguments.get('--users'))
+    messages_per_user = int(arguments.get('--messages'))
+
+    test = LoadTestScenario(maxserver, max_user, max_user_password)
 
     test.setup(num_conversations, users_per_conversation, messages_per_user)
-    test.run()
+    success = test.run()
     test.teardown()
+    if success:
+        test.stats()
