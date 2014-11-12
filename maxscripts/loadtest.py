@@ -11,6 +11,7 @@ Options:
     -c <num_conv>, --conversations <num_conv>       Number of conversations to start [default: 1]
     -u <num_users>, --users <num_users>             Number of users per conversation [default: 2]
     -m <num_msg>, --messages <num_mg>               Number of messages each user will send [default: 3]
+    -a <rate>, --rate <rate>                        maximum messages/second rate [default: 0]
 """
 
 from docopt import docopt
@@ -19,6 +20,7 @@ from utalkpythonclient.testclient import UTalkTestClient
 from maxclient.rest import MaxClient
 
 import gevent
+import json
 import os
 import sys
 
@@ -47,8 +49,10 @@ class MaxHelper(object):
         created = []
         for i in xrange(index, index + count):
             username = '{}_{:0>4}'.format(basename, i)
-            #self.max.people[username].get()
+            self.max.people[username].post()
             created.append(username)
+            sys.stdout.write('.')
+            sys.stdout.flush()
         return created
 
     def create_conversation(self, displayname, users):
@@ -78,14 +82,19 @@ class LoadTestScenario(object):
         self.maxserver = maxserver
         self.maxhelper = MaxHelper(self.maxserver, username, password)
 
-    def setup(self, num_conversations, users_per_conversation, messages_per_user):
+    def load(self, json_file):
+        if os.path.exists(json_file):
+            return json.loads(open(json_file).read())
+        else:
+            return []
+
+    def setup(self, num_conversations, users_per_conversation, messages_per_user, message_rate):
         self.num_conversations = num_conversations
         self.users_per_conversation = users_per_conversation
         self.messages_per_user = messages_per_user
-
         self.total_users = num_conversations * users_per_conversation
 
-        self.conversations = []
+        self.created_conversations = self.load('conversations.json')
         self.clients = []
 
         os.system('clear')
@@ -93,24 +102,37 @@ class LoadTestScenario(object):
 
         print " > Creating {} users and {} conversations".format(self.total_users, self.num_conversations)
 
-        user_index = 0
+        if self.created_conversations:
+            print '    --> Skipping {} existing conversations'.format(len(self.created_conversations))
+
+        self.conversations = []
 
         for conversation_index in xrange(self.num_conversations):
-            conversation_name = 'conversation_{:0>4}'.format(self.num_conversations)
-            users = self.maxhelper.create_users('user', self.users_per_conversation, user_index)
-            self.maxhelper.create_users('user', self.users_per_conversation, user_index)
-            new_conversation = self.maxhelper.create_conversation(conversation_name, users)
-            self.conversations.append(new_conversation)
-            user_index += len(users)
+            if conversation_index < len(self.created_conversations):
+                # conversation exists
+                self.conversations.append(self.created_conversations[conversation_index])
+            else:
+                # we need a new conversation
+                sys.stdout.write("\n    --> Creating conversation #{} ".format(conversation_index))
+                sys.stdout.flush()
+                conversation_name = 'conversation_{:0>4}'.format(self.num_conversations)
+                users = self.maxhelper.create_users('user_{:0>4}_'.format(conversation_index), self.users_per_conversation, 0)
+                new_conversation = self.maxhelper.create_conversation(conversation_name, users)
+                self.conversations.append(new_conversation)
+                self.create_conversations.append(new_conversation)
 
+        open('conversations.json', 'w').write(json.dumps(self.created_conversations))
+
+        print
         print " > Creating {} Test Clients".format(self.total_users)
 
         # Syncronization primitives
         self.wait_for_others = AsyncResult()
         self.counter = ReadyCounter(self.wait_for_others)
 
+        start_delay = 1.0 / message_rate if message_rate > 0 else 0
         for conversation in self.conversations:
-            for user in conversation['participants']:
+            for user in conversation['participants'][:self.users_per_conversation]:
                 utalk_client = UTalkTestClient(
                     self.maxserver,
                     user['username'],
@@ -122,8 +144,10 @@ class LoadTestScenario(object):
                 utalk_client.setup(
                     conversation['id'],
                     self.messages_per_user,
-                    self.messages_per_user * (len(conversation['participants']) - 1),
-                    self.counter
+                    self.messages_per_user * (self.users_per_conversation - 1),
+                    self.counter,
+                    start_delay=start_delay * self.counter.count,
+                    message_delay=self.total_users * start_delay
                 )
 
                 self.clients.append(utalk_client)
@@ -135,8 +159,8 @@ class LoadTestScenario(object):
         # for client in self.clients:
         #     client.teardown()
 
-        for conversation in self.conversations:
-            self.maxhelper.delete_conversation_and_users(conversation)
+        # for conversation in self.conversations:
+        #     self.maxhelper.delete_conversation_and_users(conversation)
 
     def run(self):
         return self.test()
@@ -160,10 +184,30 @@ class LoadTestScenario(object):
 
         all_recv_times = []
         all_ackd_times = []
+        rates = {}
+        all_sent_times = []
+
+        def elapsed(t0, t1):
+            message_elapsed = t1 - t0
+            return message_elapsed.total_seconds()
 
         for client in self.clients:
-            all_recv_times += client.stats['recv_times']
-            all_ackd_times += client.stats['ackd_times']
+            all_recv_times += [elapsed(*times) for times in client.stats['recv_times']]
+            all_ackd_times += [elapsed(*times) for times in client.stats['ackd_times']]
+            for sent in client.stats['send_times']:
+                r_id = sent.strftime('%Y%m%d%H%M%S')
+                rates.setdefault(r_id, 0)
+                rates[r_id] += 1
+                all_sent_times.append(sent)
+
+        sorted_rates = sorted(rates.items(), key=lambda x: x[0])
+        all_sent_times.sort()
+        seconds_elapsed = all_sent_times[-1] - all_sent_times[0]
+        actual_rate = len(all_sent_times) / seconds_elapsed.total_seconds()
+        print 'Message rate = {} m/s'.format(actual_rate)
+
+        for rate, value in sorted_rates:
+            print value, 'm/s'
 
         average_recv_time = sum(all_recv_times) / len(all_recv_times)
         average_ackd_time = sum(all_ackd_times) / len(all_ackd_times)
@@ -180,6 +224,7 @@ class LoadTestScenario(object):
         median_recv_time = all_recv_times[len(all_recv_times) / 2]
         median_ackd_time = all_ackd_times[len(all_ackd_times) / 2]
 
+        normal_user_message_time = 5
         print
         print ' RESULTS'
         print '---------'
@@ -187,12 +232,10 @@ class LoadTestScenario(object):
         print ' Conversations: %d' % self.num_conversations
         print ' Users per conversation: %d' % self.users_per_conversation
         print ' Total concurrent users: %d ' % self.total_users
-        print
-        # print ' Time to connect to maxtalk'
-        # print '----------------------------'
-        # print ' AVERAGE : %.2f seconds' % (sum(connect_times) / len(messenger_threads))
-        # print ' MIN     : %.2f seconds' % (min(connect_times))
-        # print ' MAX     : %.2f seconds' % (max(connect_times))
+        print ' Rate tested: %.2f' % actual_rate
+
+        print ' Assuming users writing a message every {} seconds, with this results'.format(normal_user_message_time)
+        print ' we can handle %d concurrent users ' % int(actual_rate / (1.0 / normal_user_message_time))
         print
         print 'Message reception times'
         print '------------------------------------'
@@ -201,7 +244,6 @@ class LoadTestScenario(object):
         print ' MIN     : %.2f seconds/message' % (min_recv_time)
         print ' MAX     : %.2f seconds/message' % (max_recv_time)
         print
-
         print
         print 'Message acknowledge times'
         print '------------------------------------'
@@ -214,6 +256,9 @@ class LoadTestScenario(object):
     def test(self):
 
         print " > Testing: sending {} messages".format(self.total_users * self.messages_per_user)
+
+        from gevent.monkey import patch_all
+        patch_all()
 
         self.greenlets = [gevent.spawn(client.start) for client in self.clients]
         gevent.joinall(self.greenlets, raise_error=True)
@@ -241,10 +286,11 @@ def main(argv=sys.argv):
     num_conversations = int(arguments.get('--conversations'))
     users_per_conversation = int(arguments.get('--users'))
     messages_per_user = int(arguments.get('--messages'))
+    message_rate = float(arguments.get('--rate'))
 
     test = LoadTestScenario(maxserver, max_user, max_user_password)
 
-    test.setup(num_conversations, users_per_conversation, messages_per_user)
+    test.setup(num_conversations, users_per_conversation, messages_per_user, message_rate)
     success = test.run()
     test.teardown()
     if success:
