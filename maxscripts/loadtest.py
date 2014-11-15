@@ -128,7 +128,7 @@ class LoadTestScenario(object):
                 users = self.maxhelper.create_users('user_{:0>4}_'.format(conversation_index), self.users_per_conversation, 0)
                 new_conversation = self.maxhelper.create_conversation(conversation_name, users)
                 self.conversations.append(new_conversation)
-                self.create_conversations.append(new_conversation)
+                self.created_conversations.append(new_conversation)
 
         open('conversations.json', 'w').write(json.dumps(self.created_conversations))
 
