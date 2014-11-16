@@ -1,5 +1,5 @@
 from gevent.event import AsyncResult
-from maxclient.rest import MaxClient
+from maxclient.wsgi import MaxClient
 
 import sys
 
@@ -24,6 +24,11 @@ class MaxHelper(object):
         self.max = MaxClient(maxserver)
         self.max.login(username, password)
 
+    def get_client_as(self, actor):
+        client = MaxClient(self.maxserver, actor=actor)
+        client.setToken('xxx')
+        return client
+
     def create_users(self, basename, count, index=0):
         created = []
         for i in xrange(index, index + count):
@@ -36,7 +41,7 @@ class MaxHelper(object):
 
     def create_conversation(self, displayname, users):
         creator = users[0]
-        client = MaxClient(self.maxserver, actor=creator)
+        client = self.get_client_as(creator)
         conversation = client.conversations.post(
             object_content='First Message',
             contexts=[{
@@ -47,7 +52,7 @@ class MaxHelper(object):
         return client.conversations[conversation['contexts'][0]['id']].get()
 
     def delete_conversation_and_users(self, conversation):
-        client = MaxClient(self.maxserver, actor=conversation['creator'])
+        client = self.get_client_as(conversation['creator'])
         users = conversation['participants']
         client.conversations[conversation['id']].delete()
 

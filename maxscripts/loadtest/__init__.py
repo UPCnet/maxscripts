@@ -3,6 +3,7 @@
 Usage:
     max.loadtest utalk <maxserver> [options]
     max.loadtest utalk-rate <maxserver> [options]
+    max.loadtest max messages <maxserver> [options]
 
 Options:
     -r <username>, --username <username>            Username of the max restricted user
@@ -21,6 +22,7 @@ import sys
 import time
 
 from maxscripts.loadtest.utalk import UtalkLoadTest
+from maxscripts.loadtest.max import MaxMessagesLoadTest
 
 
 def main(argv=sys.argv):
@@ -56,3 +58,12 @@ def main(argv=sys.argv):
             stats = test.stats()
             print "{total_users:>6} {effective_rate:>6.2f} {average_recv_time:>6.2f} {average_ackd_time:>6.2f}".format(**stats)
             time.sleep(20)
+
+    # Max loadtests
+    if arguments.get('max'):
+        if arguments.get('messages'):
+            test = MaxMessagesLoadTest(maxserver, max_user, max_user_password)
+            test.setup(messages_per_user)
+            success = test.run()
+            if success:
+                test.stats()

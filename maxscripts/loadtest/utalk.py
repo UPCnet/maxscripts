@@ -1,5 +1,5 @@
-from maxscripts.loadtest.utils import MaxHelper
 from maxscripts.loadtest.utils import ReadyCounter
+from maxscripts.loadtest.scenarios import LoadTestScenario
 from utalkpythonclient.testclient import UTalkTestClient
 
 import gevent
@@ -8,16 +8,31 @@ import os
 import sys
 
 
-class UtalkLoadTest(object):
+class UtalkLoadTest(LoadTestScenario):
 
-    def log(self, msg):
-        if not self.quiet:
-            print msg
+    stats_template = """
+  RESULTS
+-------------------------------------
+  Conversations: {conversations}
+  Users per conversation: {users_per_conversation}
+  Total concurrent users: {total_users}
+  Rate requested: {requested_rate:.3f} messages/s
+  Effective rate: {effective_rate:.3f} messages/s
 
-    def __init__(self, maxserver, username, password, quiet=False):
-        self.maxserver = maxserver
-        self.maxhelper = MaxHelper(self.maxserver, username, password)
-        self.quiet = quiet
+  Message reception times
+-------------------------------------
+  AVERAGE : {average_recv_time:.3f} seconds/message
+  MEDIAN  : {median_recv_time:.3f} seconds/message
+  MIN     : {min_recv_time:.3f} seconds/message
+  MAX     : {max_recv_time:.3f} seconds/message
+
+  Message acknowledge times
+-------------------------------------
+  AVERAGE : {average_ackd_time:.3f} seconds/message
+  MEDIAN  : {median_ackd_time:.3f} seconds/message
+  MIN     : {min_ackd_time:.3f} seconds/message
+  MAX     : {max_ackd_time:.3f} seconds/message
+        """
 
     def load(self, json_file):
         if os.path.exists(json_file):
@@ -100,15 +115,6 @@ class UtalkLoadTest(object):
         # for conversation in self.conversations:
         #     self.maxhelper.delete_conversation_and_users(conversation)
 
-    def run(self):
-        return self.test()
-        # try:
-        #     return self.test()
-        # except Exception as exc:
-        #     print exc
-        #     print exc.message
-        #     return False
-
     def harvest_stats(self):
 
         all_recv_times = []
@@ -168,40 +174,6 @@ class UtalkLoadTest(object):
             "max_ackd_time": max_ackd_time,
 
         }
-
-    def stats(self):
-        self.log(' > Preparing stats')
-        stats = self.harvest_stats()
-
-        # Assuming users writing a message every {} seconds, with this results'.format(normal_user_message_time)
-        # we can handle %d concurrent users ' % int(actual_rate / (1.0 / normal_user_message_time))
-
-        results = """
-  RESULTS
--------------------------------------
-  Conversations: {conversations}
-  Users per conversation: {users_per_conversation}
-  Total concurrent users: {total_users}
-  Rate requested: {requested_rate:.3f} messages/s
-  Effective rate: {effective_rate:.3f} messages/s
-
-  Message reception times
--------------------------------------
-  AVERAGE : {average_recv_time:.3f} seconds/message
-  MEDIAN  : {median_recv_time:.3f} seconds/message
-  MIN     : {min_recv_time:.3f} seconds/message
-  MAX     : {max_recv_time:.3f} seconds/message
-
-  Message acknowledge times
--------------------------------------
-  AVERAGE : {average_ackd_time:.3f} seconds/message
-  MEDIAN  : {median_ackd_time:.3f} seconds/message
-  MIN     : {min_ackd_time:.3f} seconds/message
-  MAX     : {max_ackd_time:.3f} seconds/message
-        """.format(**stats)
-
-        self.log(results)
-        return stats
 
     def test(self):
 
