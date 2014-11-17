@@ -13,12 +13,12 @@ class LoadTestScenario(object):
         if not self.quiet:
             print msg
 
-    def __init__(self, maxserver, username, password, quiet=False):
+    def __init__(self, maxserver, username, password, mode='rest', quiet=False):
         self.maxserver = maxserver
         self.quiet = quiet
 
         try:
-            self.maxhelper = MaxHelper(self.maxserver, username, password)
+            self.maxhelper = MaxHelper(self.maxserver, mode, username, password)
         except ConnectionError:
             self.log('Could not connect to {}. Check url is correct and server is running'.format(self.maxserver))
             sys.exit(1)

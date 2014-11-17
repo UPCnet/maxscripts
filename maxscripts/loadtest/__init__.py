@@ -14,6 +14,7 @@ Options:
     -u <num_users>, --users <num_users>             Number of users per conversation [default: 2]
     -m <num_msg>, --messages <num_mg>               Number of messages each user will send [default: 3]
     -a <rate>, --rate <rate>                        maximum messages/second rate [default: 0]
+    -e <mode>, --maxclient <mode>                   Type of maxclient to use, rest, or wsgi [default: rest]
 """
 
 from docopt import docopt
@@ -37,9 +38,10 @@ def main(argv=sys.argv):
     users_per_conversation = int(arguments.get('--users'))
     messages_per_user = int(arguments.get('--messages'))
     message_rate = float(arguments.get('--rate'))
+    maxclient_mode = arguments.get('--maxclient')
 
     if arguments.get('utalk'):
-        test = UtalkLoadTest(maxserver, max_user, max_user_password)
+        test = UtalkLoadTest(maxserver, max_user, max_user_password, mode=maxclient_mode)
         test.setup(num_conversations, users_per_conversation, messages_per_user, message_rate)
         success = test.run()
         test.teardown()
@@ -52,7 +54,7 @@ def main(argv=sys.argv):
 
         print " USERS   RATE   RECV   ACKD"
         for rate in rates:
-            test = UtalkLoadTest(maxserver, max_user, max_user_password, quiet=True)
+            test = UtalkLoadTest(maxserver, max_user, max_user_password, mode=maxclient_mode, quiet=True)
             test.setup(num_conversations, users_per_conversation, messages_per_user, rate)
             test.run()
             stats = test.stats()
@@ -62,7 +64,7 @@ def main(argv=sys.argv):
     # Max loadtests
     if arguments.get('max'):
         if arguments.get('messages'):
-            test = MaxMessagesLoadTest(maxserver, max_user, max_user_password)
+            test = MaxMessagesLoadTest(maxserver, max_user, max_user_password, mode=maxclient_mode)
             test.setup(messages_per_user)
             success = test.run()
             if success:

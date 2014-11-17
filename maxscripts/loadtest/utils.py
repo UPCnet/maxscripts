@@ -1,5 +1,6 @@
 from gevent.event import AsyncResult
-from maxclient.wsgi import MaxClient
+from maxclient.rest import MaxClient as RestMaxClient
+from maxclient.wsgi import MaxClient as WsgiMaxClient
 
 import sys
 
@@ -19,13 +20,14 @@ class ReadyCounter(object):
 
 
 class MaxHelper(object):
-    def __init__(self, maxserver, username=None, password=None):
+    def __init__(self, maxserver, mode, username=None, password=None):
+        self.MaxClient = WsgiMaxClient if mode == 'wsgi' else RestMaxClient
         self.maxserver = maxserver
-        self.max = MaxClient(maxserver)
+        self.max = self.MaxClient(maxserver)
         self.max.login(username, password)
 
     def get_client_as(self, actor):
-        client = MaxClient(self.maxserver, actor=actor)
+        client = self.MaxClient(self.maxserver, actor=actor)
         client.setToken('xxx')
         return client
 

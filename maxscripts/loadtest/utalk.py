@@ -81,7 +81,7 @@ class UtalkLoadTest(LoadTestScenario):
 
         # Syncronization primitives
         self.counter = ReadyCounter()
-        self.wait_for_others = ReadyCounter.event
+        self.wait_for_others = self.counter.event
 
         start_delay = 1.0 / self.message_rate if message_rate > 0 else 0
         for conversation in self.conversations:
