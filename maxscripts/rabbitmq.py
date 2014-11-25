@@ -42,7 +42,6 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
             print "Creating exchanges and bindings"
             count = 1
             for user in users:
-
                 server.create_user(user['username'])
                 #print '{}/{} Created exchanges for {}'.format(count, len(users), user['username'])
 
@@ -63,12 +62,13 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
                     if context.get('notifications', False):
                         created += 1
                         server.activity.bind_user(context['hash'], user['username'])
-
-                #print 'Created {} context bindings for user {}'.format(created, user['username'])
+                        context['hash']
+            #print 'Created {} context bindings for user {}'.format(created, user['username'])
 
     def run(self):
 
         # Create client without declaring anything
+
         self.server = RabbitClient(self.rabbitmq_url)
 
         # Clear all non-native exchanges and queues
@@ -98,17 +98,17 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
             db = conn[dbname]
 
             print "Getting users list from database"
+
             # Get all users to create their rabbit exchange and bindings
-            all_users = db.users.find({}, {'_id': 0, 'username': 1, 'talkingIn': 1, 'subscribedTo': 1})
+            query = {} if not self.options.usernamefilter else {'username': self.options.usernamefilter}
+            all_users = db.users.find(query, {'_id': 0, 'username': 1, 'talkingIn': 1, 'subscribedTo': 1})
             #unpack lazy results
             all_users = [a for a in all_users]
 
-            # Temporary filter
-            all_users = all_users[:500]
-
             batch = []
-            tasks = 15
+            tasks = 15 if len(all_users) > 15 else 1
             users_per_task = len(all_users) / tasks
+
             for task_index in range(tasks + 1):
                 start = task_index * users_per_task
                 end = (task_index + 1) * users_per_task
@@ -154,6 +154,12 @@ def main(argv=sys.argv, quiet=False):  # pragma: no cover
         type=bool,
         default=False,
         help=("Delete all exchanges and queues first"))
+    parser.add_argument(
+        '-u', '--user',
+        dest='usernamefilter',
+        type=str,
+        default=None,
+        help=("Perform action only for this user"))
     options = parser.parse_args()
 
     command = InitAndPurgeRabbitServer(options, quiet)
