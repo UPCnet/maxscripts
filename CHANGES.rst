@@ -1,11 +1,29 @@
 Changelog
 =========
 
-4.0.3 (unreleased)
+4.0.3 (2014-11-25)
 ------------------
 
-- Nothing changed yet.
-
+* Add timeline loadtest [Carles Bruguera]
+* Enable operation with a single user [Carles Bruguera]
+* Option to choose between rest and wsgi maxclients [Carles Bruguera]
+* New generic rate test scenario [Carles Bruguera]
+* test max messages rates scenraio [Carles Bruguera]
+* Organize loatest code [Carles Bruguera]
+* Move file [Carles Bruguera]
+* Fix typo [Carles Bruguera]
+* Separate stats building from printing [Carles Bruguera]
+* Quiet log mode [Carles Bruguera]
+* Dynamic variable testing [Carles Bruguera]
+* Option to rate-limiting requests [Carles Bruguera]
+* Don't create and destroy eveything in each test [Carles Bruguera]
+* Calculate effective rate [Carles Bruguera]
+* Finished loadtest [Carles Bruguera]
+* WIP: Finish basic test, wrapped in a scenario class [Carles Bruguera]
+* WIP: Refactor max load tests on maxscripts package [Carles Bruguera]
+* Gevent enabled rabbit populator [Carles Bruguera]
+* Move utalkclient to new package [Carles Bruguera]
+* Add websocket utalk client [Carles Bruguera]
 
 4.0.2 (2014-06-02)
 ------------------
