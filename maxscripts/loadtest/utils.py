@@ -41,6 +41,10 @@ class MaxHelper(object):
             sys.stdout.flush()
         return created
 
+    def create_activity(self, text, user):
+        client = self.get_client_as(user)
+        client.people[user].activities.post(object_content=text)
+
     def create_conversation(self, displayname, users):
         creator = users[0]
         client = self.get_client_as(creator)

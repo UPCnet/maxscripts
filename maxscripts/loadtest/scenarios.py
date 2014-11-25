@@ -3,6 +3,8 @@ from requests import ConnectionError
 
 import sys
 import time
+from gevent.monkey import patch_all
+import gevent
 
 
 class LoadTestScenario(object):
@@ -93,4 +95,37 @@ class RateLoadTest(LoadTestScenario):
             "median_rate": 1.0 / self.response_times[len(self.response_times) / 2],
             "slowest_rate": 1.0 / max(self.response_times),
             "fastest_rate": 1.0 / min(self.response_times)
+        }
+
+
+class GeventRateLoadTest(RateLoadTest):
+    stats_template = """
+  RESULTS
+-------------------------------------
+  Sent requests: {requests_count}
+
+  Rates
+-------------------------------------
+  AVERAGE     : {average_rate:.4f} req/second
+
+        """
+
+    def test(self):
+        patch_all()
+        greenlets = []
+        start = time.time()
+        for i in xrange(self.count):
+            greenlets.append(gevent.spawn(self.request))
+
+        gevent.joinall(greenlets, raise_error=True)
+        end = time.time()
+        elapsed = end - start
+        self.elapsed = elapsed
+        return True
+
+    def harvest_stats(self):
+
+        return {
+            "requests_count": self.count,
+            "average_rate": 1.0 / (self.elapsed / self.count),
         }
