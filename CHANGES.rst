@@ -1,11 +1,10 @@
 Changelog
 =========
 
-4.0.4 (unreleased)
+4.0.4 (2014-11-26)
 ------------------
 
-- Nothing changed yet.
-
+* Make mongodb initializer auth-enabled [Carles Bruguera]
 
 4.0.3 (2014-11-25)
 ------------------
