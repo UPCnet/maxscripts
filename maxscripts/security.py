@@ -24,7 +24,20 @@ def init_security(settings):
         replica_set = settings.get('mongodb.replica_set', '')
         conn = pymongo.MongoReplicaSetClient(hosts, replicaSet=replica_set)
 
+    # Authenticate to mongodb if auth is enabled
+    if settings.get('mongodb.auth', False):
+        mongodb_username = settings.get('mongodb.username', '')
+        mongodb_password = settings.get('mongodb.password', '')
+        mongodb_auth_db = settings.get('mongodb.authdb', settings['mongodb.db_name'])
+
+        # If we have valid username and password, authorize on
+        # specified database
+        if mongodb_username and mongodb_password:
+            auth_db = conn[mongodb_auth_db]
+            auth_db.authenticate(mongodb_username, mongodb_password)
+
     db = conn[settings['mongodb.db_name']]
+
     if not [items for items in db.security.find({})]:
         db.security.insert(default_security)
         print("Created default security info in MAXDB.\n"
