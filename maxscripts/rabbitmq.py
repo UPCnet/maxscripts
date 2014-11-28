@@ -9,6 +9,11 @@ from gevent.monkey import patch_all
 patch_all()
 
 from maxcarrot import RabbitClient
+from maxutils import mongodb
+
+
+def asbool(value):
+    return value in [1, True, 'true', 'True']
 
 
 class InitAndPurgeRabbitServer(object):  # pragma: no cover
@@ -27,43 +32,51 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
         self.instances.read(self.options.instancesfile)
 
         try:
-            self.cluster = self.common.get('mongodb', 'cluster')
+            self.cluster = asbool(self.common.get('mongodb', 'cluster'))
             self.standaloneserver = self.common.get('mongodb', 'url')
             self.clustermembers = self.common.get('mongodb', 'hosts')
             self.replicaset = self.common.get('mongodb', 'replica_set')
+
+            self.mongo_auth = asbool(self.common.get('mongodb', 'auth'))
+            self.mongo_authdb = self.common.get('mongodb', 'authdb')
+            self.mongo_username = self.common.get('mongodb', 'username')
+            self.mongo_password = self.common.get('mongodb', 'password')
+            self.cluster = self.common.get('mongodb', 'username')
             self.rabbitmq_url = self.common.get('rabbitmq', 'server')
             self.rabbitmq_manage_url = self.common.get('rabbitmq', 'manage')
-            self.maxserver_names = [maxserver for maxserver in self.instances.sections() if maxserver.startswith('max_')]
+            self.maxserver_names = [maxserver for maxserver in self.instances.sections()]
         except:
             print('You must provide a valid configuration .ini file.')
             sys.exit()
 
     def add_users(self, users, db, server):
-            print "Creating exchanges and bindings"
-            count = 1
-            for user in users:
-                server.create_user(user['username'])
-                #print '{}/{} Created exchanges for {}'.format(count, len(users), user['username'])
+        print "Creating exchanges and bindings"
 
-                count += 1
+        for count, user in enumerate(users):
+            server.create_user(user['username'])
+            print '{}/{} Created exchanges for {}'.format(count, len(users), user['username'])
 
-                conversations = user.get('talkingIn', [])
-                # Create bindings between user read/write exchanges and conversations exchange
-                for conversation in conversations:
-                    server.conversations.bind_user(conversation['id'], user['username'])
+            count += 1
 
-                #print 'Created {} conversation bindings for user {}'.format(len(conversations), user['username'])
-                # Create bindings between user read exchange and activity exchange
+            conversations = user.get('talkingIn', [])
+            # Create bindings between user read/write exchanges and conversations exchange
+            for conversation in conversations:
+                server.conversations.bind_user(conversation['id'], user['username'])
 
-                subscriptions = user.get('subscribedTo', [])
-                created = 0
-                for subscription in subscriptions:
-                    context = db.contexts.find_one({'hash': subscription['hash']}, {'_id': 0, 'hash': 1, 'notifications': 1})
-                    if context.get('notifications', False):
-                        created += 1
-                        server.activity.bind_user(context['hash'], user['username'])
-                        context['hash']
-            #print 'Created {} context bindings for user {}'.format(created, user['username'])
+            if conversations:
+                print 'Created {} conversation bindings for user {}'.format(len(conversations), user['username'])
+
+            # Create bindings between user read exchange and activity exchange
+            subscriptions = user.get('subscribedTo', [])
+            created = 0
+            for subscription in subscriptions:
+                context = db.contexts.find_one({'hash': subscription['hash']}, {'_id': 0, 'hash': 1, 'notifications': 1})
+                if context.get('notifications', False):
+                    created += 1
+                    server.activity.bind_user(context['hash'], user['username'])
+                    context['hash']
+            if created:
+                print 'Created {} context bindings for user {}'.format(created, user['username'])
 
     def run(self):
 
@@ -82,8 +95,18 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
         self.server.management.load_exchanges()
         self.server.management.load_queues()
 
+        # Mongodb connection initialization
+        cluster_enabled = self.cluster
+        auth_enabled = self.mongo_auth
+        mongodb_uri = self.clustermembers if cluster_enabled else self.standalone
+
+        conn = mongodb.get_connection(
+            mongodb_uri,
+            use_greenlets=True,
+            cluster=self.replicaset if cluster_enabled else None)
+
         # Connect to MongoDB
-        if not self.cluster in ['true', 'True', '1', 1]:
+        if not self.cluster:
             db_uri = self.standaloneserver
             conn = pymongo.MongoClient(db_uri)
         else:
@@ -91,11 +114,17 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
             replica_set = self.replicaset
             conn = pymongo.MongoReplicaSetClient(hosts, replicaSet=replica_set)
 
-        for dbname in self.maxserver_names:
+        for maxname in self.maxserver_names:
+
             print('')
-            print('Initializing exchanges and bindings for users in "{}" max instance'.format(dbname.split('_')[-1]))
+            print('Initializing exchanges and bindings for users in "{}" max instance'.format(dbname))
             print('')
-            db = conn[dbname]
+            db = mongodb.get_database(
+                conn,
+                'max_{}'.format(maxname),
+                username=self.mongo_username if auth_enabled else None,
+                password=self.mongo_password if auth_enabled else None,
+                authdb=self.mongo_authdb if auth_enabled else None)
 
             print "Getting users list from database"
 
