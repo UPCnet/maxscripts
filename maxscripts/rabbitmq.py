@@ -55,7 +55,7 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
             print('You must provide a valid configuration .ini file.')
             sys.exit()
 
-    def add_users(self, server, users):
+    def add_users(self, server, users, task=''):
 
         for count, user in enumerate(users):
             if server.user_publish_exchange(user['username']) in self.exchanges_by_name and \
@@ -65,11 +65,16 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
             else:
                 self.log('Created exchanges and bindings for {}'.format(user['username']))
                 server.create_user(user['username'])
+            if count % 50 == 0:
+                print '{}Progress: {} / {}'.format(task, count, len(users))
 
-    def add_conversation_bindings(self, server, conversations):
+        print '{}Done!'.format(task)
+
+    def add_conversation_bindings(self, server, conversations, task=''):
         """
         """
-        for cid, members in conversations:
+        for count, conversation in enumerate(conversations):
+            cid, members = conversation
             for member in members:
                 pub_binding_key = '{}_{}.*_conversations'.format(server.user_publish_exchange(member), cid)
                 sub_binding_key = 'conversations_{}.*_{}'.format(cid, server.user_subscribe_exchange(member))
@@ -79,11 +84,16 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
                 else:
                     self.log('Create pub/sub bindings for user {} on conversation {}'.format(member, cid))
                     server.conversations.bind_user(cid, member)
+            if count % 50 == 0:
+                print '{}Progress: {} / {}'.format(task, count, len(conversations))
 
-    def add_context_bindings(self, server, contexts):
+        print '{}Done!'.format(task)
+
+    def add_context_bindings(self, server, contexts, task=''):
         """
         """
-        for cid, members in contexts:
+        for count, conversation in enumerate(contexts):
+            cid, members = conversation
             for member in members:
                 sub_binding_key = 'activity_{}_{}'.format(cid, server.user_subscribe_exchange(member))
                 if sub_binding_key in self.conversation_bindings:
@@ -91,6 +101,10 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
                 else:
                     self.log('Create pub/sub bindings for user {} on conversation {}'.format(member, cid))
                     server.conversations.bind_user(cid, member)
+            if count % 50 == 0:
+                print '{}Progress: {} / {}'.format(task, count, len(contexts))
+
+        print '{}Done!'.format(task)
 
     def do_batch(self, method, items):
         batch = []
@@ -109,7 +123,7 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
         if tasks == 1:
             method(self.server, items)
         else:
-            threads = [gevent.spawn(method, RabbitClient(self.rabbitmq_url), batch_items) for batch_items in batch]
+            threads = [gevent.spawn(method, RabbitClient(self.rabbitmq_url), batch_items, 'Task #{} '.format(taskid)) for taskid, batch_items in enumerate(batch)]
             gevent.joinall(threads)
 
         end = time.time()
