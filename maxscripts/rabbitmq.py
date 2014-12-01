@@ -65,7 +65,7 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
             else:
                 self.log('Created exchanges and bindings for {}'.format(user['username']))
                 server.create_user(user['username'])
-            if count % 50 == 0:
+            if count % self.log_rate == 0:
                 print '{}Progress: {} / {}'.format(task, count, len(users))
 
         print '{}Done!'.format(task)
@@ -84,7 +84,7 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
                 else:
                     self.log('Create pub/sub bindings for user {} on conversation {}'.format(member, cid))
                     server.conversations.bind_user(cid, member)
-            if count % 50 == 0:
+            if count % self.log_rate == 0:
                 print '{}Progress: {} / {}'.format(task, count, len(conversations))
 
         print '{}Done!'.format(task)
@@ -101,7 +101,7 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
                 else:
                     self.log('Create pub/sub bindings for user {} on conversation {}'.format(member, cid))
                     server.conversations.bind_user(cid, member)
-            if count % 50 == 0:
+            if count % self.log_rate == 0:
                 print '{}Progress: {} / {}'.format(task, count, len(contexts))
 
         print '{}Done!'.format(task)
@@ -153,14 +153,18 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
         self.server.management.load_exchanges()
         self.server.management.load_queues()
         self.exchanges_by_name = self.server.management.exchanges_by_name
+        print '  Found {} exchanges'.format(len(self.exchanges))
+        print '  Found {} queues'.format(len(self.queues))
 
         print '> Loading current conversation bindings'
         bindings = self.server.management.load_exchange_bindings('conversations')
         self.conversation_bindings = ['{source}_{routing_key}_{destination}'.format(**binding) for binding in bindings]
+        print '  Found {} conversation bindings'.format(len(self.conversation_bindings))
 
         print '> Loading current context bindings'
         bindings = self.context_bindings = self.server.management.load_exchange_bindings('activity')
         self.context_bindings = ['{source}_{routing_key}_{destination}'.format(**binding) for binding in bindings]
+        print '  Found {} context bindings'.format(len(self.context_bindings))
 
         # Mongodb connection initialization
         cluster_enabled = self.cluster
@@ -256,6 +260,12 @@ def main(argv=sys.argv, quiet=False):  # pragma: no cover
         type=int,
         default=1,
         help=("Number of gevent workers to start"))
+    parser.add_argument(
+        '-l', '--lograte',
+        dest='log_rate',
+        type=int,
+        default=100,
+        help=("Log progress every N items processed"))
     parser.add_argument(
         '-u', '--user',
         dest='usernamefilter',
