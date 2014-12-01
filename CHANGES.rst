@@ -1,11 +1,10 @@
 Changelog
 =========
 
-4.0.9 (unreleased)
+4.0.9 (2014-12-01)
 ------------------
 
-- Nothing changed yet.
-
+* BUG: context bindings were created on conversations [Carles Bruguera]
 
 4.0.8 (2014-12-01)
 ------------------
