@@ -78,11 +78,14 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
             Create bindings between "pub" and "sub" exchanges of users in
             existing conversations
         """
+        expected_bindings = []
         for count, conversation in enumerate(conversations):
             cid, members = conversation
             for member in members:
                 pub_binding_key = '{}_{}.*_conversations'.format(server.user_publish_exchange(member), cid)
                 sub_binding_key = 'conversations_{}.*_{}'.format(cid, server.user_subscribe_exchange(member))
+                expected_bindings.append(pub_binding_key)
+                expected_bindings.append(sub_binding_key)
                 if pub_binding_key in self.conversation_bindings and \
                    sub_binding_key in self.conversation_bindings:
                     pass
@@ -92,6 +95,13 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
             if count % self.lograte == 0:
                 print '{}Progress: {} / {}'.format(task, count, len(conversations))
 
+        default_bindings = set(['conversations_*.messages_messages', 'conversations_*.notifications_push'])
+        non_expected = (set(self.conversation_bindings) - set(expected_bindings)) - default_bindings
+        for binding in non_expected:
+            source, routing_key, destination = binding.split('_')
+            self.server.management.delete_binding(source, destination, routing_key)
+            print "Removing unknown binding: {}".format(binding)
+
         print '{}Done!'.format(task)
 
     def add_context_bindings(self, server, contexts, task=''):
@@ -99,18 +109,26 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
             Create bindings between "sub" exchange of users on contexts with
             notifications enabled and the "activity" exchange
         """
+        expected_bindings = []
         for count, context in enumerate(contexts):
             cid, members = context
             for member in members:
                 sub_binding_key = 'activity_{}_{}'.format(cid, server.user_subscribe_exchange(member))
+                expected_bindings.append(sub_binding_key)
                 if sub_binding_key in self.context_bindings:
                     pass
                 else:
                     self.log('Create pub/sub bindings for user {} on context {}'.format(member, cid))
-                    server.contexts.bind_user(cid, member)
+                    server.activity.bind_user(cid, member)
             if count % self.lograte == 0:
                 print '{}Progress: {} / {}'.format(task, count, len(contexts))
 
+        default_bindings = set(['activity_#_push'])
+        non_expected = (set(self.context_bindings) - set(expected_bindings)) - default_bindings
+        for binding in non_expected:
+            source, routing_key, destination = binding.split('_')
+            self.server.management.delete_binding(source, destination, routing_key)
+            print "Removing unknown binding: {}".format(binding)
         print '{}Done!'.format(task)
 
     def do_batch(self, method, items):
