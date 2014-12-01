@@ -1,11 +1,10 @@
 Changelog
 =========
 
-4.0.10 (unreleased)
+4.0.10 (2014-12-01)
 -------------------
 
-- Nothing changed yet.
-
+* Delete unknown exchange bindings [Carles Bruguera]
 
 4.0.9 (2014-12-01)
 ------------------
