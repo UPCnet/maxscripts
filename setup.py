@@ -15,7 +15,8 @@ requires = [
     'haigha',
     'docopt',
     'pymongo',
-    'utalk-python-client'
+    'utalk-python-client',
+    'maxutils'
 ]
 
 setup(name='maxscripts',
