@@ -1,11 +1,10 @@
 Changelog
 =========
 
-4.0.7 (unreleased)
+4.0.7 (2014-12-01)
 ------------------
 
-- Nothing changed yet.
-
+* Log detail of loaded items [Carles Bruguera]
 
 4.0.6 (2014-12-01)
 ------------------
