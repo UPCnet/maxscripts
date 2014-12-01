@@ -153,8 +153,8 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
         self.server.management.load_exchanges()
         self.server.management.load_queues()
         self.exchanges_by_name = self.server.management.exchanges_by_name
-        print '  Found {} exchanges'.format(len(self.exchanges))
-        print '  Found {} queues'.format(len(self.queues))
+        print '  Found {} exchanges'.format(len(self.server.management.exchanges))
+        print '  Found {} queues'.format(len(self.server.management.queues))
 
         print '> Loading current conversation bindings'
         bindings = self.server.management.load_exchange_bindings('conversations')

@@ -4,7 +4,6 @@ Changelog
 4.0.8 (unreleased)
 ------------------
 
-- Nothing changed yet.
 
 
 4.0.7 (2014-12-01)
