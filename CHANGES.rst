@@ -1,11 +1,19 @@
 Changelog
 =========
 
-4.0.5 (unreleased)
+4.0.5 (2014-12-01)
 ------------------
 
-- Nothing changed yet.
-
+* Improve rabbitmq script [Carles Bruguera]
+* Check existance of bindings before declaring [Carles Bruguera]
+* Generalize batch processing [Carles Bruguera]
+* Do not use gevent when tasks == 1 [Carles Bruguera]
+* Improvements to rabbitmq script [Carles Bruguera]
+* Do not start gevent when only one task [Carles Bruguera]
+* Check existance of exchange/bindings before declaring [Carles Bruguera]
+* Generalize batch process [Carles Bruguera]
+* Reduce verbosity to speedup processing [Carles Bruguera]
+* Update script to use auth on mongo [Carles Bruguera]
 
 4.0.4 (2014-11-26)
 ------------------
