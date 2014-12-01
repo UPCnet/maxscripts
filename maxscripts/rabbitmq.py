@@ -37,6 +37,7 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
 
         self.workers = self.options.workers
         self.verbose = self.options.verbose
+        self.lograte = self.options.lograte
 
         try:
             self.cluster = asbool(self.common.get('mongodb', 'cluster'))
@@ -56,7 +57,9 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
             sys.exit()
 
     def add_users(self, server, users, task=''):
-
+        """
+            Add users exchanges and internal binding
+        """
         for count, user in enumerate(users):
             if server.user_publish_exchange(user['username']) in self.exchanges_by_name and \
                server.user_subscribe_exchange(user['username']) in self.exchanges_by_name:
@@ -65,13 +68,15 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
             else:
                 self.log('Created exchanges and bindings for {}'.format(user['username']))
                 server.create_user(user['username'])
-            if count % self.log_rate == 0:
+            if count % self.lograte == 0:
                 print '{}Progress: {} / {}'.format(task, count, len(users))
 
         print '{}Done!'.format(task)
 
     def add_conversation_bindings(self, server, conversations, task=''):
         """
+            Create bindings between "pub" and "sub" exchanges of users in
+            existing conversations
         """
         for count, conversation in enumerate(conversations):
             cid, members = conversation
@@ -84,24 +89,26 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
                 else:
                     self.log('Create pub/sub bindings for user {} on conversation {}'.format(member, cid))
                     server.conversations.bind_user(cid, member)
-            if count % self.log_rate == 0:
+            if count % self.lograte == 0:
                 print '{}Progress: {} / {}'.format(task, count, len(conversations))
 
         print '{}Done!'.format(task)
 
     def add_context_bindings(self, server, contexts, task=''):
         """
+            Create bindings between "sub" exchange of users on contexts with
+            notifications enabled and the "activity" exchange
         """
-        for count, conversation in enumerate(contexts):
-            cid, members = conversation
+        for count, context in enumerate(contexts):
+            cid, members = context
             for member in members:
                 sub_binding_key = 'activity_{}_{}'.format(cid, server.user_subscribe_exchange(member))
-                if sub_binding_key in self.conversation_bindings:
+                if sub_binding_key in self.context_bindings:
                     pass
                 else:
-                    self.log('Create pub/sub bindings for user {} on conversation {}'.format(member, cid))
-                    server.conversations.bind_user(cid, member)
-            if count % self.log_rate == 0:
+                    self.log('Create pub/sub bindings for user {} on context {}'.format(member, cid))
+                    server.contexts.bind_user(cid, member)
+            if count % self.lograte == 0:
                 print '{}Progress: {} / {}'.format(task, count, len(contexts))
 
         print '{}Done!'.format(task)
@@ -262,7 +269,7 @@ def main(argv=sys.argv, quiet=False):  # pragma: no cover
         help=("Number of gevent workers to start"))
     parser.add_argument(
         '-l', '--lograte',
-        dest='log_rate',
+        dest='lograte',
         type=int,
         default=100,
         help=("Log progress every N items processed"))
