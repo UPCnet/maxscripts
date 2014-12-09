@@ -16,7 +16,8 @@ requires = [
     'docopt',
     'pymongo',
     'utalk-python-client',
-    'maxutils'
+    'maxutils',
+    'click'
 ]
 
 setup(name='maxscripts',
@@ -51,5 +52,6 @@ setup(name='maxscripts',
       max.newinstance = maxscripts.newinstance:main
       max.mongoindexes = maxscripts.mongoindexes:main
       max.loadtest = maxscripts.loadtest:main
+      max.changecontexturl = maxscripts.changecontexturl:main
       """,
       )
