@@ -35,7 +35,7 @@ def main(maxinf, username, password, client, origin_url, target_url):
     really_want_it = query_yes_no('Are you sure to make this changes?')
 
     if really_want_it:
-        maxclient = MaxClient(maxinf['maxserver'], oauth_server=maxinf['oauthserver'], debug=True)
+        maxclient = MaxClient(maxinf['maxserver'], oauth_server=maxinf['oauth_server'], debug=True)
         maxclient.login()
 
         for url in origin_contexts:
