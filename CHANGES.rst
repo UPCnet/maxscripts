@@ -1,7 +1,7 @@
 Changelog
 =========
 
-4.0.11 (2015-01-29)
+4.0.12 (2015-01-29)
 -------------------
 
 * Use maxutils.mongodb to acces mongo [Carles Bruguera]
