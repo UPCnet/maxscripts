@@ -45,11 +45,11 @@ class CreateMongoIndexes(object):  # pragma: no cover
         conn = mongodb.get_connection(
             mongodb_uri,
             use_greenlets=True,
-            cluster=self.replica_set if cluster_enabled else None)
+            cluster=self.replicaset if cluster_enabled else None)
 
         # Log the kinf of connection we're making
         if self.cluster:
-            print 'Connecting to database @ cluster "{}" ...'.format(self.replica_set)
+            print 'Connecting to database @ cluster "{}" ...'.format(self.replicaset)
         else:
             print 'Connecting to database @ {} ...'.format(self.standaloneserver)
 
