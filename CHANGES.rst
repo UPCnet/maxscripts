@@ -1,11 +1,12 @@
 Changelog
 =========
 
-4.0.11 (unreleased)
+4.0.11 (2015-01-29)
 -------------------
 
-- Nothing changed yet.
-
+* Use maxutils.mongodb to acces mongo [Carles Bruguera]
+* Last changes, fix things [Victor Fernandez de Alba]
+* Added new script for changing the URL of a selected contexts given its starting string [Victor Fernandez de Alba]
 
 4.0.10 (2014-12-01)
 -------------------
