@@ -53,5 +53,6 @@ setup(name='maxscripts',
       max.mongoindexes = maxscripts.mongoindexes:main
       max.loadtest = maxscripts.loadtest:main
       max.changecontexturl = maxscripts.changecontexturl:main
+      max.docgen = maxscripts.docgen:main
       """,
       )
