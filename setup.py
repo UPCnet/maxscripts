@@ -54,5 +54,7 @@ setup(name='maxscripts',
       max.loadtest = maxscripts.loadtest:main
       max.changecontexturl = maxscripts.changecontexturl:main
       max.docgen = maxscripts.docgen:main
+      maxcli = maxscripts.clients:maxcli
+      hubcli = maxscripts.clients:hubcli
       """,
       )
