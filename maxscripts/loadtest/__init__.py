@@ -5,6 +5,7 @@ Usage:
     max.loadtest utalk-rate <maxserver> [options]
     max.loadtest max messages <maxserver> [options]
     max.loadtest max timeline <maxserver> [options]
+    max.loadtest max avatar <maxserver> [options]
 
 Options:
     -r <username>, --username <username>            Username of the max restricted user
@@ -26,6 +27,7 @@ import time
 from maxscripts.loadtest.utalk import UtalkLoadTest
 from maxscripts.loadtest.max import MaxMessagesLoadTest
 from maxscripts.loadtest.max import MaxTimelineLoadTest
+from maxscripts.loadtest.max import MaxAvatarLoadTest
 
 
 def main(argv=sys.argv):
@@ -74,6 +76,13 @@ def main(argv=sys.argv):
 
         if arguments.get('timeline'):
             test = MaxTimelineLoadTest(maxserver, max_user, max_user_password, mode=maxclient_mode)
+            test.setup(messages_per_user)
+            success = test.run()
+            if success:
+                test.stats()
+
+        if arguments.get('avatar'):
+            test = MaxAvatarLoadTest(maxserver, max_user, max_user_password, mode=maxclient_mode)
             test.setup(messages_per_user)
             success = test.run()
             if success:

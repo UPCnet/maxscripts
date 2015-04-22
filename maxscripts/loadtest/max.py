@@ -41,3 +41,20 @@ class MaxTimelineLoadTest(RateLoadTest):
             Gets a user timeline
         """
         self.endpoint.get()
+
+
+class MaxAvatarLoadTest(RateLoadTest):
+
+    def setup(self, *args, **kwargs):
+        """
+            Creates 1000 messages
+        """
+        super(MaxAvatarLoadTest, self).setup(*args, **kwargs)
+        self.client = self.maxhelper.get_client_as('carles.bruguera')
+        self.endpoint = self.client.people['carles.bruguera'].avatar
+
+    def request(self):
+        """
+            Gets a user timeline
+        """
+        self.endpoint.get()
