@@ -42,7 +42,7 @@ class UpdateCloudAPISettings(object):  # pragma: no cover
             replica_set = self.replicaset
             conn = pymongo.MongoReplicaSetClient(hosts, replicaSet=replica_set)
 
-        dbs = [self.dbname, 'tests']
+        dbs = [self.dbname]
         for dbi in dbs:
             db = conn[dbi]
 
