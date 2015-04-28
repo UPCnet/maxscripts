@@ -25,7 +25,7 @@ Usage:
     maxcli -h
 
 Options:
-    -m <domain>, --domain <domain>                  The domain to use to authenticate, this will override maxserver
+    <domain>                                        The domain to use to authenticate, this will override maxserver
     -s <maxserver>, --maxserver <maxserver>         The url of a max server [default: {default_maxserver}]
     -u <username>, --username <username>            The username to authenticate on max [default: {default_username}]
     -p <password>, --password <password>            The user's password, will be prompted if missing
@@ -39,9 +39,10 @@ Options:
     default_hubserver=DEFAULT_HUB_SERVER)
 
 from docopt import docopt
-import ipdb
 from maxclient.rest import MaxClient
 from maxclient.client import BadUsernameOrPasswordError
+from hubclient import HubClient
+import ipdb
 
 
 def maxcli():
@@ -85,7 +86,7 @@ def maxcli():
 __maxhub__doc__ = """ULearn HUB Client terminal utility
 
 Usage:
-    maxhub <domain> [><username> <password>] [options]
+    maxhub <domain> [<username> <password>] [options]
     maxhub -h
 
 Options:
@@ -103,13 +104,13 @@ Options:
 def hubcli():
     arguments = docopt(__maxhub__doc__, version='ULearn HUB Client terminal utility 1.0')
     domain = arguments.get('<domain>')
-    username = arguments.get('<username>')
-    password = arguments.get('<password>')
+    username = arguments.get('--username')
+    password = arguments.get('--password')
 
     hubserver = arguments.get('--hubserver')
     debug = arguments.get('--debug')
 
-    client = MaxClient.from_hub_domain(domain, hub=hubserver, debug=debug)
+    client = HubClient(domain, hub=hubserver, debug=debug)
 
     print
     print '  Connecting to {}'.format(client.url)
