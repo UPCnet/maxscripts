@@ -1,6 +1,5 @@
 import ConfigParser
 import argparse
-import pymongo
 import sys
 import time
 import gevent
@@ -95,8 +94,10 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
             if count % self.lograte == 0:
                 print '{}Progress: {} / {}'.format(task, count, len(conversations))
 
+        self.global_valid_bindings += expected_bindings
+
         default_bindings = set(['conversations_*.messages_messages', 'conversations_*.notifications_push'])
-        non_expected = (set(self.conversation_bindings) - set(expected_bindings)) - default_bindings
+        non_expected = (set(self.conversation_bindings) - set(self.global_valid_bindings)) - default_bindings
         for binding in non_expected:
             source, routing_key, destination = binding.split('_')
             self.server.management.delete_binding(source, destination, routing_key)
@@ -124,7 +125,9 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
                 print '{}Progress: {} / {}'.format(task, count, len(contexts))
 
         default_bindings = set(['activity_#_push'])
-        non_expected = (set(self.context_bindings) - set(expected_bindings)) - default_bindings
+        self.global_valid_bindings += expected_bindings
+
+        non_expected = (set(self.context_bindings) - set(self.global_valid_bindings)) - default_bindings
         for binding in non_expected:
             source, routing_key, destination = binding.split('_')
             self.server.management.delete_binding(source, destination, routing_key)
@@ -173,6 +176,10 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
         print '> Creating default exchanges, queues and bindings'
         self.server.declare()
 
+        # Keep track of all bindings created on any maxserver batch during this
+        # script execution, in order to avoid deleting valid bindings
+        self.global_valid_bindings = []
+
         # Refresh
         print '> Loading current exchanges and queues'
         self.server.management.load_exchanges()
@@ -202,6 +209,12 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
             cluster=self.replicaset if cluster_enabled else None)
 
         for maxname in self.maxserver_names:
+            dbname = 'max_{}'.format(maxname)
+
+            if dbname not in conn.database_names():
+                print ('Skipping "{}" max instance, no database found, maybe is an alias?'.format(maxname))
+                continue
+
             print('')
             print('============================================================================')
             print(' Processing "{}" max instance'.format(maxname))
@@ -209,7 +222,7 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
             print('')
             db = mongodb.get_database(
                 conn,
-                'max_{}'.format(maxname),
+                dbname,
                 username=self.mongo_username if auth_enabled else None,
                 password=self.mongo_password if auth_enabled else None,
                 authdb=self.mongo_authdb if auth_enabled else None)
