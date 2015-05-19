@@ -1,10 +1,10 @@
 Changelog
 =========
 
-5.1 (unreleased)
-----------------
+5.0.1 (2015-05-19)
+------------------
 
-- Nothing changed yet.
+* Release fix
 
 
 5.0 (2015-05-19)
