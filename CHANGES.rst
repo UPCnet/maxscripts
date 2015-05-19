@@ -1,11 +1,14 @@
 Changelog
 =========
 
-4.0.13 (unreleased)
--------------------
+5.0 (2015-05-19)
+----------------
 
-- Nothing changed yet.
-
+* Fix dependencies and hubcli [Carles Bruguera]
+* Avatar loadtest [Carles Bruguera]
+* Add maxcli and maxhub cli wrappers [Carles Bruguera]
+* Don't initialize cloudapis on tests database [Carles Bruguera]
+* Add aglio documentation generator [Carles Bruguera]
 
 4.0.12 (2015-01-29)
 -------------------
