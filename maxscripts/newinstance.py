@@ -19,7 +19,7 @@ class AddNewMaxInstance(object):  # pragma: no cover
         self.instances.read(self.options.instancesfile)
 
         try:
-            self.maxserver_names = [maxserver.split('_')[-1] for maxserver in self.instances.sections() if maxserver.startswith('max_')]
+            self.maxserver_names = self.maxserver_names = [maxserver for maxserver in self.instances.sections()]
 
         except:
             print('You must provide a valid configuration .ini file.')
@@ -38,19 +38,25 @@ class AddNewMaxInstance(object):  # pragma: no cover
             if max_name is not None:
                 max_name = raw_input("  > Ooops!, there is already an instance with this name, try again:")
             else:
-                max_name = raw_input("  > The name of the max instance (without max_ prefix): ")
-            new_section_name = 'max_{}'.format(max_name)
+                max_name = raw_input("  > The name of the max instance (same as domain): ")
+            new_section_name = max_name
             valid_new_section = not self.instances.has_section(new_section_name)
 
-        max_server = raw_input("  > The base url of the max server [{}/{{name}}]: ".format(self.common.get('max', 'server')))
+        precalculated_max_server = '{}/{}'.format(self.common.get('max', 'server'), max_name)
+        max_server = raw_input("  > The base url of the max server [{}]: ".format(precalculated_max_server))
         if not max_server:
-            max_server = '{}/{}'.format(self.common.get('max', 'server'), max_name)
+            max_server = precalculated_max_server
 
-        max_oauth_server = raw_input("  > The base url of the oauth server [{}/{{name}}]: ".format(self.common.get('oauth', 'server')))
+        precalculated_oauth_server = '{}/{}'.format(self.common.get('oauth', 'server'), max_name)
+        max_oauth_server = raw_input("  > The base url of the oauth server [{}]: ".format(precalculated_oauth_server))
         if not max_oauth_server:
-            max_oauth_server = '{}/{}'.format(self.common.get('oauth', 'server'), max_name)
+            max_oauth_server = precalculated_oauth_server
 
         max_hashtag = raw_input("  > The hashtag to track on twitter (without #): ")
+        language = raw_input("  > The language used in push notification literals [ca]: ")
+        if not language:
+            language = 'ca'
+
         max_user = raw_input("  > The restricted user: ")
 
         max_client = MaxClient(url=max_server, oauth_server=max_oauth_server)
@@ -64,6 +70,7 @@ class AddNewMaxInstance(object):  # pragma: no cover
         self.instances.set(new_section_name, 'oauth_server', max_oauth_server)
         self.instances.set(new_section_name, 'restricted_user', max_user)
         self.instances.set(new_section_name, 'restricted_user_token', max_token)
+        self.instances.set(new_section_name, 'language', language)
 
         self.instances.write(open(self.options.instancesfile, 'w'))
 
