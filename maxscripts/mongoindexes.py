@@ -5,6 +5,8 @@ import ConfigParser
 import sys
 from maxutils import mongodb
 import re
+from pymongo import ASCENDING
+from pymongo import DESCENDING
 
 
 def asbool(value):
@@ -47,7 +49,7 @@ class CreateMongoIndexes(object):  # pragma: no cover
             use_greenlets=True,
             cluster=self.replicaset if cluster_enabled else None)
 
-        # Log the kinf of connection we're making
+        # Log the kind of connection we're making
         if self.cluster:
             print 'Connecting to database @ cluster "{}" ...'.format(self.replicaset)
         else:
@@ -64,10 +66,15 @@ class CreateMongoIndexes(object):  # pragma: no cover
         clean = re.sub(r'(?:^|\n)#+[^\n]*', r'', indexes_file)
         count = 0
         indexes = re.findall(r'(\w+):([^\s]+)', clean, re.DOTALL)
-        for collection, index_key in indexes:
+        for collection, index_def in indexes:
             sys.stdout.write('. ')
             sys.stdout.flush()
-            db[collection].create_index(index_key)
+
+            def get_direction(sort_dir):
+                return DESCENDING if sort_dir == '-' else ASCENDING
+            index = [(key, get_direction(sort_dir)) for sort_dir, key in re.findall(r'(-?)([^,]+)', index_def)]
+            print index
+            db[collection].create_index(index)
             count += 1
         if count:
             print "\nAdded {} indexes to database '{}'".format(count, self.db_name)

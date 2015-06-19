@@ -19,12 +19,6 @@ class AddNewMaxInstance(object):  # pragma: no cover
         self.instances.read(self.options.instancesfile)
 
         try:
-            self.cluster = self.common.get('mongodb', 'cluster')
-            self.standaloneserver = self.common.get('mongodb', 'url')
-            self.clustermembers = self.common.get('mongodb', 'hosts')
-            self.replicaset = self.common.get('mongodb', 'replica_set')
-            self.rabbitmq_url = self.common.get('rabbitmq', 'server')
-            self.rabbitmq_manage_url = self.common.get('rabbitmq', 'manage')
             self.maxserver_names = [maxserver.split('_')[-1] for maxserver in self.instances.sections() if maxserver.startswith('max_')]
 
         except:
