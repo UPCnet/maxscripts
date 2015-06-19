@@ -1,11 +1,12 @@
 Changelog
 =========
 
-5.0.2 (unreleased)
+5.0.2 (2015-06-19)
 ------------------
 
-- Nothing changed yet.
-
+* Fix newinstance script [Carles Bruguera]
+* Remove unused variables [Carles Bruguera]
+* Allow multikey indexes on mongodb [Carles Bruguera]
 
 5.0.1 (2015-05-19)
 ------------------
