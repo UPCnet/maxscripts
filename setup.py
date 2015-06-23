@@ -44,7 +44,7 @@ setup(name='maxscripts',
       entry_points="""
       # -*- Entry points: -*-
       [console_scripts]
-      initialize_max_db = maxscripts.security:main
+      max.initialize = maxscripts.maxinit:main
       max.devel = maxscripts.devel:main
       maxui.setup = maxscripts.maxui:main
       max.report = maxscripts.report:main
