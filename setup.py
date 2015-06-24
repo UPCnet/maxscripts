@@ -45,7 +45,7 @@ setup(name='maxscripts',
       # -*- Entry points: -*-
       [console_scripts]
       max.security = maxscripts.security:main
-      max.cli = maxscripts.devel:main
+      max.devel = maxscripts.devel:main
       maxui.setup = maxscripts.maxui:main
       max.report = maxscripts.report:main
       max.cloudapis = maxscripts.cloudapis:main
