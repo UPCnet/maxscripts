@@ -1,11 +1,13 @@
 Changelog
 =========
 
-5.0.3 (unreleased)
+5.0.3 (2015-07-01)
 ------------------
 
-- Nothing changed yet.
-
+* Improve script to allow sparse indexes, update and cleanup [Carles Bruguera]
+* Change script name [Carles Bruguera]
+* Refactor security script [Carles Bruguera]
+* New max initializer script [Carles Bruguera]
 
 5.0.2 (2015-06-19)
 ------------------
