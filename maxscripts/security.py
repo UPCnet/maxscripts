@@ -63,6 +63,8 @@ def main():
 
     if add:
         security = db.security.find_one({})
+        if security is None:
+            security = db.security.insert(default_security)
         for user in usernames:
             if user not in security['roles']['Manager']:
                 db.security.update({'_id': security['_id']}, {'$push': {'roles.Manager': user}})
