@@ -176,7 +176,7 @@ def load_settings():
     if 'token' not in settings or 'username' not in settings:
         username, password = login()
         settings['username'] = username
-        settings['token'] = client.getToken(username, password)
+        settings['token'] = client.getToken(username, password, bypass=True)
         save_settings = True
 
     client.setToken(settings['token'])
