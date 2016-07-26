@@ -1,11 +1,11 @@
 Changelog
 =========
 
-5.0.4 (unreleased)
+5.0.4 (2016-07-26)
 ------------------
 
-- Nothing changed yet.
-
+* Solucionar get token restricted nou osirisjwt [Pilar Marinas]
+* Don't assume default security exists [Carles Bruguera]
 
 5.0.3 (2015-07-01)
 ------------------
