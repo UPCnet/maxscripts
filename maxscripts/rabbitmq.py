@@ -205,12 +205,15 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
 
         conn = mongodb.get_connection(
             mongodb_uri,
-            use_greenlets=True,
+            # use_greenlets=True,
             cluster=self.replicaset if cluster_enabled else None)
+
+        # we must authenticate against admin (not necessarily authdb) so we will be allowed to get database_names later on
+        if self.mongo_auth :
+            conn.admin.authenticate(self.mongo_username, self.mongo_password)
 
         for maxname in self.maxserver_names:
             dbname = 'max_{}'.format(maxname)
-
             if dbname not in conn.database_names():
                 print ('Skipping "{}" max instance, no database found, maybe is an alias?'.format(maxname))
                 continue
