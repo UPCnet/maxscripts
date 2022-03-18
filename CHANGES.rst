@@ -1,11 +1,10 @@
 Changelog
 =========
 
-5.0.5 (unreleased)
+5.0.5 (2022-03-18)
 ------------------
 
-- Nothing changed yet.
-
+* Cambios para que funcione la nueva version de mongo [Pilar Marinas]
 
 5.0.4 (2016-07-26)
 ------------------
