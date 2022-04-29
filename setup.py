@@ -23,7 +23,7 @@ requires = [
 ]
 
 setup(name='maxscripts',
-      version='5.0.6.dev0',
+      version='5.0.6',
       description='maxscripts',
       long_description=README + '\n\n' + CHANGES,
       classifiers=[
