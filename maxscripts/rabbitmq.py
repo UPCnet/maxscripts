@@ -99,9 +99,13 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
         default_bindings = set(['conversations_*.messages_messages', 'conversations_*.notifications_push'])
         non_expected = (set(self.conversation_bindings) - set(self.global_valid_bindings)) - default_bindings
         for binding in non_expected:
-            source, routing_key, destination = binding.split('_')
-            self.server.management.delete_binding(source, destination, routing_key)
-            print "Removing unknown binding: {}".format(binding)
+            try:
+                source, routing_key, destination = binding.split('_')
+                self.server.management.delete_binding(source, destination, routing_key)
+                print "Removing unknown binding: {}".format(binding)
+            except:
+                print "Error Removing unknown binding: {}".format(binding)
+                pass
 
         print '{}Done!'.format(task)
 
