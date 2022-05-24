@@ -1,11 +1,10 @@
 Changelog
 =========
 
-5.0.7 (unreleased)
+5.0.7 (2022-05-24)
 ------------------
 
-- Nothing changed yet.
-
+* Try except error delete binding [Pilar Marinas]
 
 5.0.6 (2022-04-29)
 ------------------
