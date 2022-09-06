@@ -133,9 +133,13 @@ class InitAndPurgeRabbitServer(object):  # pragma: no cover
 
         non_expected = (set(self.context_bindings) - set(self.global_valid_bindings)) - default_bindings
         for binding in non_expected:
-            source, routing_key, destination = binding.split('_')
-            self.server.management.delete_binding(source, destination, routing_key)
-            print "Removing unknown binding: {}".format(binding)
+            try:
+               source, routing_key, destination = binding.split('_')
+               self.server.management.delete_binding(source, destination, routing_key)
+               print "Removing unknown binding: {}".format(binding)
+            except:
+               print "Error removing unknown binding: {}".format(binding)
+               continue
         print '{}Done!'.format(task)
 
     def do_batch(self, method, items):
